@@ -43,7 +43,7 @@ def draw_big_point(p):
     turtle.goto(p)
     turtle.color(0.8, 0.9, 0)
     turtle.dot(15)
-    turtle.write('     '+str(p))
+    turtle.write('     ' + str(p))
 
 
 def draw_point(p):
@@ -59,25 +59,31 @@ def draw_line_basic(p1, p2):
     x2, y2 = p2
 
     직선_기울기 = (y2 - y1) / (x2 - x1)
-    x의_절편 = x1 - y1 / 직선_기울기
     y의_절편 = y1 - x1 * 직선_기울기
-    점_거리= math.dist(p1, p2)
-
 
     for x in range(x1, x2 + 1, 10):
         y = 직선_기울기 * x + y의_절편
         draw_point((x, y))
+
+    draw_point(p2)
+    pass
+
+
+def draw_circle(p1, p2):
+    draw_big_point(p1)
+    draw_big_point(p2)
+
+    x1, y1 = p1
+    x2, y2 = p2
+
+    점_거리 = math.dist(p1, p2)
 
     for 각도 in range(0, 360, 5):
         x = math.cos(각도 * math.pi / 180) * 점_거리 / 2 + (x1 + x2) / 2
         y = math.sin(각도 * math.pi / 180) * 점_거리 / 2 + (y1 + y2) / 2
         draw_point((x, y))
 
-    for 각도 in range(0, 360, 5):
-        x = math.cos(각도 * math.pi / 180) * 점_거리/4 + (x1+x2)/2
-        y = math.sin(각도 * math.pi / 180) * 점_거리/4 + (y1+y2)/2
-        draw_point((x, y))
-
+    draw_point(p1)
     draw_point(p2)
     pass
 
@@ -89,9 +95,23 @@ def draw_line(p1, p2):
 
 prepare_turtle_canvas()
 
-p1=-100,-100
-p2=300,100
-draw_line_basic(p1,p2)
+p1 = 0, 200
+p2 = 200, 0
+p3 = 0, -200
+p4 = -200, 0
+draw_line_basic(p1, p2)
+draw_line_basic(p3, p2)
+draw_line_basic(p4, p3)
+draw_line_basic(p4, p1)
+draw_circle(p1, p2)
+draw_circle(p2, p3)
+draw_circle(p3, p4)
+draw_circle(p4, p1)
+draw_circle(p1, p3)
+
+q1 = -100, 100
+q2 = 100, 100
+#draw_circle(q1, q2)
 
 
 turtle.done()
