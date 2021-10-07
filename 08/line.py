@@ -1,5 +1,6 @@
 import random
 import turtle
+import math
 
 
 def stop():
@@ -57,12 +58,26 @@ def draw_line_basic(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
 
-    a = (y2 - y1) / (x2 - x1)
-    b = y1 - x1 * a
+    직선_기울기 = (y2 - y1) / (x2 - x1)
+    x의_절편 = x1 - y1 / 직선_기울기
+    y의_절편 = y1 - x1 * 직선_기울기
+    점_거리= math.dist(p1, p2)
+
 
     for x in range(x1, x2 + 1, 10):
-        y = a * x + b
+        y = 직선_기울기 * x + y의_절편
         draw_point((x, y))
+
+    for 각도 in range(0, 360, 5):
+        x = math.cos(각도 * math.pi / 180) * 점_거리 / 2 + (x1 + x2) / 2
+        y = math.sin(각도 * math.pi / 180) * 점_거리 / 2 + (y1 + y2) / 2
+        draw_point((x, y))
+
+    for 각도 in range(0, 360, 5):
+        x = math.cos(각도 * math.pi / 180) * 점_거리/4 + (x1+x2)/2
+        y = math.sin(각도 * math.pi / 180) * 점_거리/4 + (y1+y2)/2
+        draw_point((x, y))
+
     draw_point(p2)
     pass
 
@@ -74,6 +89,9 @@ def draw_line(p1, p2):
 
 prepare_turtle_canvas()
 
-# fill here
+p1=-100,-100
+p2=300,100
+draw_line_basic(p1,p2)
+
 
 turtle.done()
