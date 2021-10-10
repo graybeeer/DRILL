@@ -87,31 +87,20 @@ def draw_circle(p1, p2):
     draw_point(p2)
     pass
 
-
-def draw_line(p1, p2):
-    # fill here
+def draw_shape():
+    a = 340
+    b = 200
+    t = 0.0
+    while t <= 32 * math.pi:
+        x = (a - b) * math.cos(t) + b * math.cos(t * (a / b - 1))
+        y = (a - b) * math.sin(t) - b * math.sin(t * (a / b - 1))
+        t += (math.pi / 20)
+        draw_point((x, y))
     pass
-
-
 prepare_turtle_canvas()
 
-p1 = 0, 200
-p2 = 200, 0
-p3 = 0, -200
-p4 = -200, 0
-draw_line_basic(p1, p2)
-draw_line_basic(p3, p2)
-draw_line_basic(p4, p3)
-draw_line_basic(p4, p1)
-draw_circle(p1, p2)
-draw_circle(p2, p3)
-draw_circle(p3, p4)
-draw_circle(p4, p1)
-draw_circle(p1, p3)
 
-q1 = -100, 100
-q2 = 100, 100
 #draw_circle(q1, q2)
 
-
+draw_shape()
 turtle.done()
