@@ -23,13 +23,13 @@ class Grass:
 class Player:
     def __init__(self):
         self.status = 'stop'  # stop=멈춘상태 run= 달리는 상태 jump=공중에 있는 상태 slide=슬라이딩 상태
+        self.status_save = 'stop'  # 바로 전 프레임의 플레이어 상태
         self.x, self.y = 0, 300  # 캐릭터 위치
-        self.frame_run = 0  # 캐릭터 프레임
-        self.frame_run_sec = 0  # 캐릭터 프레임 시간이 일정 지날때마다 캐릭터 프레임 증가
-        self.frame_slide = 0
-        self.frame_slide_sec = 0
+        self.frame = 0  # 캐릭터 프레임
+        self.frame_sec = 0  # 캐릭터 프레임 시간이 일정 지날때마다 캐릭터 프레임 증가
+        self.frame_ani = 0  # 캐릭터 애니메이션의 총 프레임
 
-        self.image_idle = load_image('mayreel_idle.png')  # 정지 할 때의 이미지
+        self.image_idle = load_image('bari_mayreel_idle.png')  # 정지 할 때의 이미지
         self.image_run = load_image('mayreel_run_Sheet.png')  # 달릴 때의 이미지
         self.image_jump_up = load_image('mayreel_jump_1.png')  # 위로 튀어오를 때 이미지
         self.image_jump_down = load_image('mayreel_jump_2.png')  # 아래로 떨어질 때 이미지
@@ -57,14 +57,13 @@ class Player:
             self.gravity = 0
             self.jump_count = 2
 
-        if self.status == 'slide':
-            self.frame_slide_sec += 1
-            if self.frame_slide_sec >= 20:  # 프레임 초 n당 프레임 1 지나감
-                if self.frame_slide < 4:  # 슬라이딩 시트 총 프레임 5, 5번째 프레임에서 멈춤
-                    self.frame_slide += 1
-                self.frame_slide_sec = 0
-            pass
-        elif self.jump_power > 0:  # 캐릭터 행동에 따라 상태 변환
+        self.frame_sec += 1  # 프레임 증가
+        if self.frame_sec >= 20:  # 프레임 초 n당 프레임 1 지나감
+            if self.frame < 4:  # 슬라이딩 시트 총 프레임 5, 5번째 프레임에서 멈춤
+                self.frame += 1
+            self.frame_sec = 0
+
+        if self.jump_power > 0:  # 캐릭터 행동에 따라 상태 변환
             self.status = 'jump'
         elif self.dir != 0:
             self.status = 'run'
@@ -74,18 +73,22 @@ class Player:
             elif self.dir < 0:
                 self.direction = 'h'
 
-            self.frame_run_sec += 1
-            if self.frame_run_sec >= 20:  # 프레임 초 n당 프레임 1 지나감
-                self.frame_run = (self.frame_run + 1) % 10  # 달리기 시트 총 프레임 10
-                self.frame_run_sec = 0
-
         elif self.dir == 0:
             self.status = 'stop'
 
-        if self.status != 'run':  # 달리기 상태가 아니면
-            (self.frame_run_sec, self.frame_run) = (0, 0)  # 달리기 프레임 초기화
-        if self.status != 'slide':  # 슬라이딩 상태가 아니면
-            (self.frame_slide_sec, self.frame_slide) = (0, 0)  # 슬라이딩 프레임 초기화
+        if self.status == 'stop':
+            self.frame_ani = 14
+        elif self.status == 'run':
+            self.frame_ani = 10
+        elif self.status == 'slide':
+            self.frame_ani = 5
+
+        if self.status == self.status_save:  # 현재 상태가 바뀌지 않았다면
+            pass
+        if self.status != self.status_save:  # 현재 상태가 바뀌었다면
+            self.status_save = self.status
+            self.frame = 0
+            self.frame_sec = 0
 
     def draw(self):
         # rad = 각도(라디안 단위) h=좌우 대칭, v=상하 대칭
@@ -96,13 +99,13 @@ class Player:
                 self.image_jump_down.clip_composite_draw(0, 0, 32, 32, 0, self.direction, self.x, self.y, 128, 128)
 
         elif self.status == 'stop':
-            self.image_idle.clip_composite_draw(0, 0, 32, 32, 0, self.direction, self.x, self.y, 128, 128)
+            self.image_idle.clip_composite_draw(self.frame * 272, 0, 272, 272, 0, self.direction, self.x, self.y)
 
         elif self.status == 'run':
-            self.image_run.clip_composite_draw(self.frame_run * 32, 0, 32, 32, 0, self.direction, self.x, self.y, 128,
+            self.image_run.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x, self.y, 128,
                                                128)
         elif self.status == 'slide':
-            self.image_jump_slide.clip_composite_draw(self.frame_slide * 32, 0, 32, 32, 0, self.direction, self.x,
+            self.image_jump_slide.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x,
                                                       self.y,
                                                       128, 128)
 
