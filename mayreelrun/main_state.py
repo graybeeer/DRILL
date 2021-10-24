@@ -22,18 +22,20 @@ class Grass:
 
 class Player:
     def __init__(self):
-        self.status = 'stop'  # stop=멈춘상태 run= 달리는 상태 jump=공중에 있는 상태 slide=슬라이딩 상태
-        self.status_save = 'stop'  # 바로 전 프레임의 플레이어 상태
+        self.status = 'idle'  # idle=멈춘상태 walk= 달리는 상태 jump=공중에 있는 상태 slide=슬라이딩 상태
+        self.status_save = 'idle'  # 바로 전 프레임의 플레이어 상태
         self.x, self.y = 0, 300  # 캐릭터 위치
         self.frame = 0  # 캐릭터 프레임
         self.frame_sec = 0  # 캐릭터 프레임 시간이 일정 지날때마다 캐릭터 프레임 증가
         self.frame_ani = 0  # 캐릭터 애니메이션의 총 프레임
+        self.w = 272  # 플레이어 메이릴 이미지의 크기
+        self.h = 272
 
         self.image_idle = load_image('bari_mayreel_idle.png')  # 정지 할 때의 이미지
-        self.image_run = load_image('mayreel_run_Sheet.png')  # 달릴 때의 이미지
-        self.image_jump_up = load_image('mayreel_jump_1.png')  # 위로 튀어오를 때 이미지
-        self.image_jump_down = load_image('mayreel_jump_2.png')  # 아래로 떨어질 때 이미지
-        self.image_jump_slide = load_image('mayreel_slide-Sheet.png')  # 슬라이딩 할 때 이미지
+        self.image_walk = load_image('bari_mayreel_walk.png')  # 달릴 때의 이미지
+        self.image_jump_up = load_image('bari_mayreel_jump_1.png')  # 위로 튀어오를 때 이미지
+        self.image_jump_down = load_image('bari_mayreel_jump_2.png')  # 아래로 떨어질 때 이미지
+        self.image_jump_slide = load_image('bari_mayreel_slide.png')  # 슬라이딩 할 때 이미지
 
         self.dir = 0  # 좌우 이동 속도
         self.direction = 'r'  # r= 오른쪽, h= 왼쪽
@@ -52,40 +54,40 @@ class Player:
             self.jump_power = 0
 
         self.y = self.y + self.jump_power - self.gravity  # 점프 힘 - 떨어지는 힘 만큼 위 아래로 이동
-        if self.y < 80:
-            self.y = 80
+        if self.y < 200:
+            self.y = 200
             self.gravity = 0
             self.jump_count = 2
 
         self.frame_sec += 1  # 프레임 증가
         if self.frame_sec >= 20:  # 프레임 초 n당 프레임 1 지나감
-            if self.frame < 4:  # 슬라이딩 시트 총 프레임 5, 5번째 프레임에서 멈춤
+            if self.frame < self.frame_ani - 1:  # 슬라이딩 시트 총 프레임 5, 5번째 프레임에서 멈춤
                 self.frame += 1
+            elif self.frame == self.frame_ani - 1:
+                self.frame = 0
             self.frame_sec = 0
-
-        if self.jump_power > 0:  # 캐릭터 행동에 따라 상태 변환
+        # ----------------------------------------------------------------------- # 캐릭터 행동에 따라 상태 변환
+        if (self.jump_power - self.gravity) != 0:  # 캐릭터가 위아래로 움직이는 상태면 점프상태
             self.status = 'jump'
         elif self.dir != 0:
-            self.status = 'run'
-
+            self.status = 'walk'
             if self.dir > 0:
-                self.direction = 'r'
+                self.direction = 'r'  # 오른쪽으로 가면 이미지가 오른쪽방향
             elif self.dir < 0:
-                self.direction = 'h'
-
-        elif self.dir == 0:
-            self.status = 'stop'
-
-        if self.status == 'stop':
+                self.direction = 'h'  # 왼쪽으로 가면 이미지가 왼쪽방향
+        elif self.dir == 0:  # 속도가 0이면 멈춘 상태로 바꾼다.
+            self.status = 'idle'
+        # ----------------------------------------------------------------------- # 캐릭터 상태에 따라 애니메이션 프레임 변경
+        if self.status == 'idle':  # 멈춘 상태에서는 총 프레임 14
             self.frame_ani = 14
-        elif self.status == 'run':
+        elif self.status == 'walk':
             self.frame_ani = 10
         elif self.status == 'slide':
             self.frame_ani = 5
-
+        # -----------------------------------------------------------------------
         if self.status == self.status_save:  # 현재 상태가 바뀌지 않았다면
             pass
-        if self.status != self.status_save:  # 현재 상태가 바뀌었다면
+        elif self.status != self.status_save:  # 현재 상태가 바뀌었다면
             self.status_save = self.status
             self.frame = 0
             self.frame_sec = 0
@@ -94,16 +96,18 @@ class Player:
         # rad = 각도(라디안 단위) h=좌우 대칭, v=상하 대칭
         if self.status == 'jump':
             if self.jump_power > self.gravity:
-                self.image_jump_up.clip_composite_draw(0, 0, 32, 32, 0, self.direction, self.x, self.y, 128, 128)
+                self.image_jump_up.clip_composite_draw(0, 0, 1088, 1088, 0, self.direction, self.x, self.y, 272, 272)
             elif self.jump_power <= self.gravity:
-                self.image_jump_down.clip_composite_draw(0, 0, 32, 32, 0, self.direction, self.x, self.y, 128, 128)
+                self.image_jump_down.clip_composite_draw(0, 0, 1088, 1088, 0, self.direction, self.x, self.y, 272, 272)
 
-        elif self.status == 'stop':
-            self.image_idle.clip_composite_draw(self.frame * 272, 0, 272, 272, 0, self.direction, self.x, self.y)
+        elif self.status == 'idle':
+            self.image_idle.clip_composite_draw(self.frame * 1088, 0, 1088, 1088, 0, self.direction, self.x, self.y,
+                                                272,
+                                                272)
 
-        elif self.status == 'run':
-            self.image_run.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x, self.y, 128,
-                                               128)
+        elif self.status == 'walk':
+            self.image_walk.clip_composite_draw(self.frame * 1088, 0, 1088, 1088, 0, self.direction, self.x, self.y,
+                                                272, 272)
         elif self.status == 'slide':
             self.image_jump_slide.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x,
                                                       self.y,
@@ -171,7 +175,7 @@ def handle_events():
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):  # 슬라이딩
             player.status = 'slide'
         elif (event.type, event.key) == (SDL_KEYUP, SDLK_DOWN):
-            player.status = 'stop'
+            player.status = 'idle'
 
     pass
 
