@@ -24,10 +24,10 @@ class Sky:
 
 class Grass:
     def __init__(self):
-        self.image = load_image('grass.png')
+        pass
 
     def draw(self):
-        self.image.draw(400, 30)
+        pass
 
 
 class Player:
@@ -42,6 +42,8 @@ class Player:
         self.frame_sec_all = 0  # 캐릭터 1프레임 당 시간
         self.frame_ani = 0  # 캐릭터 애니메이션의 총 프레임
         self.frame_loop = 'loop'  # loop면 애니메이션 반복
+        self.run = False  # 달리고 있는지 아닌지 상태
+        self.run_speed = 1
 
         # 배열을 이용해 여러개의 이미지를 하나의 변수에 넣을 수 있다.
         self.image_idle = [load_image('mayreel/idle/idle_00.gif'),
@@ -88,7 +90,7 @@ class Player:
         self.direction = 'r'  # r= 오른쪽, h= 왼쪽
         self.gravity = 0  # 떨어 질 때의 속도
         self.jump_power = 0  # 점프 하는 힘
-        self.jump_count = 2  # 남은 점프 횟수
+        self.jump_count = 1  # 남은 점프 횟수
 
     def update(self):
         global press_left
@@ -108,9 +110,9 @@ class Player:
             if -0.1 <= self.speed <= 0.1:
                 self.speed = 0
             elif self.speed > 0.1:
-                self.speed -= 0.004
+                self.speed -= 0.002
             elif self.speed < -0.1:
-                self.speed += 0.004
+                self.speed += 0.002
 
         # ----------------------------------------------------------------------- # 캐릭터 이동
         if self.gravity < 2:
@@ -125,7 +127,6 @@ class Player:
             self.gravity = 0
             self.jump_count = 1
         # ----------------------------------------------------------------------- # 캐릭터가 중력에 따라 위아래로 이동
-
         self.frame_sec += 1  # 프레임 증가
         if self.frame_sec >= self.frame_sec_all:  # 프레임 초 n당 프레임 1 지나감
             if self.frame < self.frame_ani - 1:  # 애니메이션 시트 총 프레임 frame_ani
@@ -182,8 +183,16 @@ class Player:
             self.status_save = self.status
             self.frame = 0
             self.frame_sec = 0
+
+        if self.run:
+            self.run_speed = 1.5
+            if self.status == 'walk':
+                self.frame_sec_all = 13
+        else:
+            self.run_speed = 1
+
         # ----------------------------------------------------------------------- # 플레이어 이동
-        self.x += self.speed  # 좌우 이동 속도 만큼 초당 움직임
+        self.x += self.speed * self.run_speed  # 좌우 이동 속도 만큼 초당 움직임
         self.y = self.y + self.jump_power - self.gravity  # 점프 힘 - 떨어지는 힘 만큼 위 아래로 이동
 
     def draw(self):
@@ -195,34 +204,34 @@ class Player:
                                                                self.direction,
                                                                self.x,
                                                                self.y + self.image_jump_up[
-                                                                   self.frame].h_value() / 8,
-                                                               self.image_jump_up[self.frame].w_value() / 4,
-                                                               self.image_jump_up[self.frame].h_value() / 4)
+                                                                   self.frame].h_value() // 8,
+                                                               self.image_jump_up[self.frame].w_value() // 4,
+                                                               self.image_jump_up[self.frame].h_value() // 4)
         elif self.status == 'jump_down':
             self.image_jump_down[self.frame].clip_composite_draw(0, 0, self.image_jump_down[self.frame].w_value(),
                                                                  self.image_jump_down[self.frame].h_value(), 0,
                                                                  self.direction,
                                                                  self.x,
                                                                  self.y + self.image_jump_down[
-                                                                     self.frame].h_value() / 8,
-                                                                 self.image_jump_down[self.frame].w_value() / 4,
-                                                                 self.image_jump_down[self.frame].h_value() / 4)
+                                                                     self.frame].h_value() // 8,
+                                                                 self.image_jump_down[self.frame].w_value() // 4,
+                                                                 self.image_jump_down[self.frame].h_value() // 4)
 
         elif self.status == 'idle':
             self.image_idle[self.frame].clip_composite_draw(0, 0, self.image_idle[self.frame].w_value(),
                                                             self.image_idle[self.frame].h_value(), 0, self.direction,
                                                             self.x,
-                                                            self.y + self.image_idle[self.frame].h_value() / 8,
-                                                            self.image_idle[self.frame].w_value() / 4,
-                                                            self.image_idle[self.frame].h_value() / 4)
+                                                            self.y + self.image_idle[self.frame].h_value() // 8,
+                                                            self.image_idle[self.frame].w_value() // 4,
+                                                            self.image_idle[self.frame].h_value() // 4)
 
         elif self.status == 'walk':
             self.image_walk[self.frame].clip_composite_draw(0, 0, self.image_walk[self.frame].w_value(),
                                                             self.image_walk[self.frame].h_value(), 0, self.direction,
                                                             self.x,
-                                                            self.y + self.image_walk[self.frame].h_value() / 8,
-                                                            self.image_walk[self.frame].w_value() / 4,
-                                                            self.image_walk[self.frame].h_value() / 4)
+                                                            self.y + self.image_walk[self.frame].h_value() // 8,
+                                                            self.image_walk[self.frame].w_value() // 4,
+                                                            self.image_walk[self.frame].h_value() // 4)
         elif self.status == 'slide':
             self.image_slide.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x,
                                                  self.y, 272, 272)
@@ -282,6 +291,11 @@ def handle_events():
                 player.jump_count -= 1
                 player.gravity = 0
                 player.jump_power = 6
+
+        if (event.type, event.key) == (SDL_KEYDOWN, SDLK_x):  # 달리기
+            player.run = True
+        elif (event.type, event.key) == (SDL_KEYUP, SDLK_x):
+            player.run = False
 
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):  # 슬라이딩
             player.status = 'slide'
