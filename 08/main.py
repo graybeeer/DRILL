@@ -35,7 +35,7 @@ def handle_events():
 # initialization code
 open_canvas()
 
-grass = Grass()
+block = Grass()
 
 running = True
 
@@ -48,7 +48,7 @@ while running:
     # grass 에 대한 상호작용
 
     # Game Drawing
-    grass.draw()
+    block.draw()
 
     update_canvas()
 # finalization code

@@ -7,7 +7,7 @@ name = "MainState"
 
 sky = None
 player = None
-grass = None
+block = None
 font = None
 
 press_left = False  # 왼쪽키를 누른 상태인지 아닌지
@@ -22,11 +22,17 @@ class Sky:
         self.image.clip_draw(0, 0, 32, 64, 400, 300, 800, 600)
 
 
-class Grass:
+class Block:
     def __init__(self):
+        self.image = load_image('map/mayreel_block_ground1_400.png')
+        self.x = 2  # 블럭 좌표로 나타냄
+        self.y = 0
         pass
 
     def draw(self):
+        self.image.clip_draw(0, 0, self.image.w_value(), self.image.h_value(),
+                             (2 * self.x + 1) * self.image.w_value() / 2,
+                             (2 * self.y + 1) * self.image.h_value() / 2)
         pass
 
 
@@ -90,6 +96,7 @@ class Player:
         self.direction = 'r'  # r= 오른쪽, h= 왼쪽
         self.gravity = 0  # 떨어 질 때의 속도
         self.jump_power = 0  # 점프 하는 힘
+        self.jump_power_max = 5  # 점프 하는 힘 한계치
         self.jump_count = 1  # 남은 점프 횟수
 
     def update(self):
@@ -97,13 +104,17 @@ class Player:
         global press_right
 
         if (press_left, press_right) == (True, False):
-            if self.speed > -0.8:
-                self.speed -= 0.004
+            if 0 >= self.speed > -0.8:
+                self.speed -= 0.02
+            elif 0.8 >= self.speed > 0:
+                self.speed -= 0.005
             elif self.speed <= -0.8:
                 self.speed = -0.8
         elif (press_left, press_right) == (False, True):
-            if self.speed < 0.8:
-                self.speed += 0.004
+            if 0 <= self.speed < 0.8:
+                self.speed += 0.02
+            elif -0.8 <= self.speed < 0:
+                self.speed += 0.005
             elif self.speed >= 0.8:
                 self.speed = 0.8
         else:
@@ -118,14 +129,20 @@ class Player:
         if self.gravity < 2:
             self.gravity += 0.05
         if self.jump_power > 0:
-            self.jump_power -= 0.025
+            if 1 >= (self.jump_power / self.jump_power_max) > 0.66:
+                self.jump_power -= 0.015
+            elif 0.66 >= (self.jump_power / self.jump_power_max) > 0.33:
+                self.jump_power -= 0.025
+            elif 0.33 >= (self.jump_power / self.jump_power_max) > 0:
+                self.jump_power -= 0.035
         elif self.jump_power <= 0:  # 점프력이 0이 되면 더 안내려감
             self.jump_power = 0
         # ----------------------------------------------------------------------- # 캐릭터가 땅에 닿으면
         if self.y <= 0:
             self.y = 0
             self.gravity = 0
-            self.jump_count = 1
+            if self.jump_power <= self.jump_power_max - 0.5:
+                self.jump_count = 1
         # ----------------------------------------------------------------------- # 캐릭터가 중력에 따라 위아래로 이동
         self.frame_sec += 1  # 프레임 증가
         if self.frame_sec >= self.frame_sec_all:  # 프레임 초 n당 프레임 1 지나감
@@ -238,18 +255,18 @@ class Player:
 
 
 def enter():
-    global player, grass, sky, font
+    global player, block, sky, font
     sky = Sky()
     player = Player()
-    grass = Grass()
+    block = Block()
 
     pass
 
 
 def exit():
-    global player, grass, font
+    global player, block, font
     del player
-    del grass
+    del block
 
     global press_left  # 키 초기화
     global press_right
@@ -290,7 +307,7 @@ def handle_events():
             if player.jump_count > 0:
                 player.jump_count -= 1
                 player.gravity = 0
-                player.jump_power = 6
+                player.jump_power = player.jump_power_max
 
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_x):  # 달리기
             player.run = True
@@ -313,7 +330,7 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
-    grass.draw()
+    block.draw()
     player.draw()
     update_canvas()
     pass

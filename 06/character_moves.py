@@ -3,7 +3,7 @@ import math
 
 open_canvas()
 
-grass = load_image('grass.png')
+block = load_image('grass.png')
 character = load_image('character.png')
 
 # fill here
@@ -17,7 +17,7 @@ x, y = 400, 90
 
 while True:
     clear_canvas_now()
-    grass.draw_now(400, 30)
+    block.draw_now(400, 30)
     character.draw_now(x, y)
     delay(0.01)
     

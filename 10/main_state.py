@@ -10,7 +10,7 @@ import title_state
 name = "MainState"
 
 player = None
-grass = None
+block = None
 font = None
 
 
@@ -42,14 +42,14 @@ class Boy:
 
 
 def enter():
-    global player, grass
+    global player, block
     boy = Boy()
     grass = Grass()
     pass
 
 
 def exit():
-    global player, grass
+    global player, block
     del (boy)
     del (grass)
     pass
@@ -80,7 +80,7 @@ def update():
 
 def draw():
     clear_canvas()
-    grass.draw()
+    block.draw()
     player.draw()
     update_canvas()
     pass
