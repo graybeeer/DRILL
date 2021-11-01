@@ -25,15 +25,16 @@ class Sky:
 class Block:
     def __init__(self):
         self.image = load_image('map/mayreel_block_ground1_400.png')
-        self.x = 2  # 블럭 좌표로 나타냄
-        self.y = 0
-        pass
+        self.x = 300  # 블럭 좌표로 나타냄
+        self.y = 200
+        self.col_rect = [self.x - self.image.w_value() / 2, self.y + self.image.h_value() / 2,
+                         self.x + self.image.w_value() / 2, self.y - self.image.h_value() / 2]
 
     def draw(self):
         self.image.clip_draw(0, 0, self.image.w_value(), self.image.h_value(),
-                             (2 * self.x + 1) * self.image.w_value() / 2,
-                             (2 * self.y + 1) * self.image.h_value() / 2)
-        pass
+                             # (2 * self.x + 1) * self.image.w_value() / 2,
+                             # (2 * self.y + 1) * self.image.h_value() / 2)
+                             self.x, self.y)
 
 
 class Player:
@@ -43,6 +44,10 @@ class Player:
         self.status_move = 'stop'  # stop=완전히 멈춘 상태 left=왼쪽으로 이동 상태 right=오른쪽으로 이동 상태
         self.status_save = 'idle'  # 바로 전 프레임의 플레이어 상태
         self.x, self.y = 0, 300  # 캐릭터 위치 ( 가운데 아래)
+        self.col_xsize = 40
+        self.col_ysize = 80
+        self.col_rect = [self.x - self.col_xsize, self.y + self.col_ysize, self.x + self.col_xsize,
+                         self.y]  # 콜라이더 [왼 위 오른 아래]
         self.frame = 0  # 캐릭터 프레임
         self.frame_sec = 0  # 캐릭터 프레임 시간이 일정 지날때마다 캐릭터 1 프레임 증가
         self.frame_sec_all = 0  # 캐릭터 1프레임 당 시간
@@ -121,9 +126,9 @@ class Player:
             if -0.1 <= self.speed <= 0.1:
                 self.speed = 0
             elif self.speed > 0.1:
-                self.speed -= 0.002
+                self.speed -= 0.004
             elif self.speed < -0.1:
-                self.speed += 0.002
+                self.speed += 0.004
 
         # ----------------------------------------------------------------------- # 캐릭터 이동
         if self.gravity < 2:
@@ -137,12 +142,29 @@ class Player:
                 self.jump_power -= 0.035
         elif self.jump_power <= 0:  # 점프력이 0이 되면 더 안내려감
             self.jump_power = 0
-        # ----------------------------------------------------------------------- # 캐릭터가 땅에 닿으면
-        if self.y <= 0:
+        # ----------------------------------------------------------------------- # 캐릭터가 물체에 닿으면
+        if self.col_rect[3] <= 0:
             self.y = 0
             self.gravity = 0
             if self.jump_power <= self.jump_power_max - 0.5:
                 self.jump_count = 1
+        if (self.col_rect[0] <= block.col_rect[2]) and (self.col_rect[2] >= block.col_rect[0]) and (
+                self.col_rect[1] >= block.col_rect[3]) and (self.col_rect[3] <= block.col_rect[1]):  # 충돌 조건
+            if self.col_rect[3] >= block.col_rect[1] - 10:  # 블럭 위
+                self.y = block.col_rect[1]
+                self.gravity = 0
+                if self.jump_power <= self.jump_power_max - 0.5:
+                    self.jump_count = 1
+            elif self.col_rect[2] <= block.col_rect[0] + 10:  # 블럭 왼쪽
+                self.x = block.col_rect[0] - self.col_xsize
+            elif self.col_rect[0] >= block.col_rect[2] - 10:  # 블럭 오른쪽
+                self.x = block.col_rect[2] + self.col_xsize
+            elif self.col_rect[1] <= block.col_rect[3] + 10:  # 블럭 아래쪽
+                if self.jump_power - self.gravity >= 0:
+                    self.jump_power = 0
+                    self.gravity = 0
+                    self.y = block.col_rect[3] - self.col_ysize
+
         # ----------------------------------------------------------------------- # 캐릭터가 중력에 따라 위아래로 이동
         self.frame_sec += 1  # 프레임 증가
         if self.frame_sec >= self.frame_sec_all:  # 프레임 초 n당 프레임 1 지나감
@@ -211,6 +233,8 @@ class Player:
         # ----------------------------------------------------------------------- # 플레이어 이동
         self.x += self.speed * self.run_speed  # 좌우 이동 속도 만큼 초당 움직임
         self.y = self.y + self.jump_power - self.gravity  # 점프 힘 - 떨어지는 힘 만큼 위 아래로 이동
+        self.col_rect = [self.x - self.col_xsize, self.y + self.col_ysize, self.x + self.col_xsize,
+                         self.y]  # 콜라이더 [왼 위 오른 아래]
 
     def draw(self):
         # rad = 각도(라디안 단위) h=좌우 대칭, v=상하 대칭
