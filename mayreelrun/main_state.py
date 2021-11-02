@@ -35,13 +35,11 @@ class Block:
         self.image = load_image('map/mayreel_block_ground1_400.png')
         self.x = x  # 블럭 좌표로 나타냄
         self.y = y
-        self.col_rect = [self.x - self.image.w_value() / 2, self.y - self.image.h_value() / 2,
-                         self.x + self.image.w_value() / 2, self.y + self.image.h_value() / 2]
+        self.col_rect = [self.x - self.image.w / 2, self.y - self.image.h / 2,
+                         self.x + self.image.w / 2, self.y + self.image.h / 2]
 
     def draw(self):
-        self.image.clip_draw(0, 0, self.image.w_value(), self.image.h_value(),
-                             # (2 * self.x + 1) * self.image.w_value() / 2,
-                             # (2 * self.y + 1) * self.image.h_value() / 2)
+        self.image.clip_draw(0, 0, self.image.w, self.image.h,
                              self.x, self.y)
 
 
@@ -158,7 +156,8 @@ class Player:
                 self.jump_count = 1
         for i in range(len(block)):
             if (self.col_rect[0] <= block[i].col_rect[2]) and (self.col_rect[2] >= block[i].col_rect[0]) and (
-                    self.col_rect[1] <= block[i].col_rect[3]) and (self.col_rect[3] >= block[i].col_rect[1]):  # 충돌 조건
+                    self.col_rect[1] <= block[i].col_rect[3]) and (
+                    self.col_rect[3] >= block[i].col_rect[1]):  # 충돌 조건
                 if self.col_rect[1] >= block[i].col_rect[3] - 10:  # 블럭 위
                     self.y = block[i].col_rect[3]
                     self.gravity = 0
@@ -249,39 +248,39 @@ class Player:
         # rad = 각도(라디안 단위) h=좌우 대칭, v=상하 대칭
         if self.status == 'jump_up':
 
-            self.image_jump_up[self.frame].clip_composite_draw(0, 0, self.image_jump_up[self.frame].w_value(),
-                                                               self.image_jump_up[self.frame].h_value(), 0,
+            self.image_jump_up[self.frame].clip_composite_draw(0, 0, self.image_jump_up[self.frame].w,
+                                                               self.image_jump_up[self.frame].h, 0,
                                                                self.direction,
                                                                self.x,
                                                                self.y + self.image_jump_up[
-                                                                   self.frame].h_value() // 8,
-                                                               self.image_jump_up[self.frame].w_value() // 4,
-                                                               self.image_jump_up[self.frame].h_value() // 4)
+                                                                   self.frame].h // 8,
+                                                               self.image_jump_up[self.frame].w // 4,
+                                                               self.image_jump_up[self.frame].h // 4)
         elif self.status == 'jump_down':
-            self.image_jump_down[self.frame].clip_composite_draw(0, 0, self.image_jump_down[self.frame].w_value(),
-                                                                 self.image_jump_down[self.frame].h_value(), 0,
+            self.image_jump_down[self.frame].clip_composite_draw(0, 0, self.image_jump_down[self.frame].w,
+                                                                 self.image_jump_down[self.frame].h, 0,
                                                                  self.direction,
                                                                  self.x,
                                                                  self.y + self.image_jump_down[
-                                                                     self.frame].h_value() // 8,
-                                                                 self.image_jump_down[self.frame].w_value() // 4,
-                                                                 self.image_jump_down[self.frame].h_value() // 4)
+                                                                     self.frame].h // 8,
+                                                                 self.image_jump_down[self.frame].w // 4,
+                                                                 self.image_jump_down[self.frame].h // 4)
 
         elif self.status == 'idle':
-            self.image_idle[self.frame].clip_composite_draw(0, 0, self.image_idle[self.frame].w_value(),
-                                                            self.image_idle[self.frame].h_value(), 0, self.direction,
+            self.image_idle[self.frame].clip_composite_draw(0, 0, self.image_idle[self.frame].w,
+                                                            self.image_idle[self.frame].h, 0, self.direction,
                                                             self.x,
-                                                            self.y + self.image_idle[self.frame].h_value() // 8,
-                                                            self.image_idle[self.frame].w_value() // 4,
-                                                            self.image_idle[self.frame].h_value() // 4)
+                                                            self.y + self.image_idle[self.frame].h // 8,
+                                                            self.image_idle[self.frame].w // 4,
+                                                            self.image_idle[self.frame].h // 4)
 
         elif self.status == 'walk':
-            self.image_walk[self.frame].clip_composite_draw(0, 0, self.image_walk[self.frame].w_value(),
-                                                            self.image_walk[self.frame].h_value(), 0, self.direction,
+            self.image_walk[self.frame].clip_composite_draw(0, 0, self.image_walk[self.frame].w,
+                                                            self.image_walk[self.frame].h, 0, self.direction,
                                                             self.x,
-                                                            self.y + self.image_walk[self.frame].h_value() // 8,
-                                                            self.image_walk[self.frame].w_value() // 4,
-                                                            self.image_walk[self.frame].h_value() // 4)
+                                                            self.y + self.image_walk[self.frame].h // 8,
+                                                            self.image_walk[self.frame].w // 4,
+                                                            self.image_walk[self.frame].h // 4)
         elif self.status == 'slide':
             self.image_slide.clip_composite_draw(self.frame * 32, 0, 32, 32, 0, self.direction, self.x,
                                                  self.y, 272, 272)
@@ -355,7 +354,6 @@ def handle_events():
 
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
             block += [(Block(event.x, get_canvas_height() - event.y))]
-
 
 
 def update():

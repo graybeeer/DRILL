@@ -43,15 +43,15 @@ class Boy:
 
 def enter():
     global player, block
-    boy = Boy()
-    grass = Grass()
+    player = Boy()
+    block = Grass()
     pass
 
 
 def exit():
     global player, block
-    del (boy)
-    del (grass)
+    del (player)
+    del (block)
     pass
 
 
