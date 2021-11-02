@@ -14,6 +14,14 @@ press_left = False  # 왼쪽키를 누른 상태인지 아닌지
 press_right = False  # 오른쪽키를 누른 상태인지 아닌지
 
 
+# 코딩 정리
+# 1. 콜라이더 박스 순서 [왼쪽, 아래쪽, 오른쪽, 위쪽]
+# 2. 마우스 입력시 y값은 다른것과는 반대로 화면 맨 위가 0이다.
+# get_canvas_height() - player.col_rect[1] >= event.y >= get_canvas_height() - player.col_rect[3]:
+#
+#
+#
+
 class Sky:
     def __init__(self):
         self.image = load_image('background_sky.png')
@@ -23,12 +31,12 @@ class Sky:
 
 
 class Block:
-    def __init__(self):
+    def __init__(self, x, y):
         self.image = load_image('map/mayreel_block_ground1_400.png')
-        self.x = 300  # 블럭 좌표로 나타냄
-        self.y = 200
-        self.col_rect = [self.x - self.image.w_value() / 2, self.y + self.image.h_value() / 2,
-                         self.x + self.image.w_value() / 2, self.y - self.image.h_value() / 2]
+        self.x = x  # 블럭 좌표로 나타냄
+        self.y = y
+        self.col_rect = [self.x - self.image.w_value() / 2, self.y - self.image.h_value() / 2,
+                         self.x + self.image.w_value() / 2, self.y + self.image.h_value() / 2]
 
     def draw(self):
         self.image.clip_draw(0, 0, self.image.w_value(), self.image.h_value(),
@@ -46,8 +54,8 @@ class Player:
         self.x, self.y = 0, 300  # 캐릭터 위치 ( 가운데 아래)
         self.col_xsize = 40
         self.col_ysize = 80
-        self.col_rect = [self.x - self.col_xsize, self.y + self.col_ysize, self.x + self.col_xsize,
-                         self.y]  # 콜라이더 [왼 위 오른 아래]
+        self.col_rect = [self.x - self.col_xsize, self.y, self.x + self.col_xsize,
+                         self.y + self.col_ysize]  # 콜라이더 [왼 아래 오른 위]
         self.frame = 0  # 캐릭터 프레임
         self.frame_sec = 0  # 캐릭터 프레임 시간이 일정 지날때마다 캐릭터 1 프레임 증가
         self.frame_sec_all = 0  # 캐릭터 1프레임 당 시간
@@ -143,27 +151,28 @@ class Player:
         elif self.jump_power <= 0:  # 점프력이 0이 되면 더 안내려감
             self.jump_power = 0
         # ----------------------------------------------------------------------- # 캐릭터가 물체에 닿으면
-        if self.col_rect[3] <= 0:
+        if self.col_rect[1] <= 0:
             self.y = 0
             self.gravity = 0
             if self.jump_power <= self.jump_power_max - 0.5:
                 self.jump_count = 1
-        if (self.col_rect[0] <= block.col_rect[2]) and (self.col_rect[2] >= block.col_rect[0]) and (
-                self.col_rect[1] >= block.col_rect[3]) and (self.col_rect[3] <= block.col_rect[1]):  # 충돌 조건
-            if self.col_rect[3] >= block.col_rect[1] - 10:  # 블럭 위
-                self.y = block.col_rect[1]
-                self.gravity = 0
-                if self.jump_power <= self.jump_power_max - 0.5:
-                    self.jump_count = 1
-            elif self.col_rect[2] <= block.col_rect[0] + 10:  # 블럭 왼쪽
-                self.x = block.col_rect[0] - self.col_xsize
-            elif self.col_rect[0] >= block.col_rect[2] - 10:  # 블럭 오른쪽
-                self.x = block.col_rect[2] + self.col_xsize
-            elif self.col_rect[1] <= block.col_rect[3] + 10:  # 블럭 아래쪽
-                if self.jump_power - self.gravity >= 0:
-                    self.jump_power = 0
+        for i in range(len(block)):
+            if (self.col_rect[0] <= block[i].col_rect[2]) and (self.col_rect[2] >= block[i].col_rect[0]) and (
+                    self.col_rect[1] <= block[i].col_rect[3]) and (self.col_rect[3] >= block[i].col_rect[1]):  # 충돌 조건
+                if self.col_rect[1] >= block[i].col_rect[3] - 10:  # 블럭 위
+                    self.y = block[i].col_rect[3]
                     self.gravity = 0
-                    self.y = block.col_rect[3] - self.col_ysize
+                    if self.jump_power <= self.jump_power_max - 0.5:
+                        self.jump_count = 1
+                elif self.col_rect[2] <= block[i].col_rect[0] + 10:  # 블럭 왼쪽
+                    self.x = block[i].col_rect[0] - self.col_xsize
+                elif self.col_rect[0] >= block[i].col_rect[2] - 10:  # 블럭 오른쪽
+                    self.x = block[i].col_rect[2] + self.col_xsize
+                elif self.col_rect[3] <= block[i].col_rect[1] + 10:  # 블럭 아래쪽
+                    if self.jump_power - self.gravity >= 0:
+                        self.jump_power = 0
+                        self.gravity = 0
+                        self.y = block[i].col_rect[1] - self.col_ysize
 
         # ----------------------------------------------------------------------- # 캐릭터가 중력에 따라 위아래로 이동
         self.frame_sec += 1  # 프레임 증가
@@ -233,8 +242,8 @@ class Player:
         # ----------------------------------------------------------------------- # 플레이어 이동
         self.x += self.speed * self.run_speed  # 좌우 이동 속도 만큼 초당 움직임
         self.y = self.y + self.jump_power - self.gravity  # 점프 힘 - 떨어지는 힘 만큼 위 아래로 이동
-        self.col_rect = [self.x - self.col_xsize, self.y + self.col_ysize, self.x + self.col_xsize,
-                         self.y]  # 콜라이더 [왼 위 오른 아래]
+        self.col_rect = [self.x - self.col_xsize, self.y, self.x + self.col_xsize,
+                         self.y + self.col_ysize]  # 콜라이더 [왼 아래 오른 위]
 
     def draw(self):
         # rad = 각도(라디안 단위) h=좌우 대칭, v=상하 대칭
@@ -282,7 +291,7 @@ def enter():
     global player, block, sky, font
     sky = Sky()
     player = Player()
-    block = Block()
+    block = [Block(-500, -500)]
 
     pass
 
@@ -311,6 +320,7 @@ def handle_events():
     events = get_events()
     global press_left
     global press_right
+    global block
 
     for event in events:
         if event.type == SDL_QUIT:
@@ -343,7 +353,9 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYUP, SDLK_DOWN):
             player.status = 'idle'
 
-    pass
+        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
+            block += [(Block(event.x, get_canvas_height() - event.y))]
+
 
 
 def update():
@@ -354,7 +366,8 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
-    block.draw()
+    for i in range(len(block)):
+        block[i].draw()
     player.draw()
     update_canvas()
     pass
