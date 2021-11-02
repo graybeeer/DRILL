@@ -347,10 +347,10 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYUP, SDLK_x):
             player.run = False
 
-        if (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):  # 슬라이딩
+        """if (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):  # 슬라이딩
             player.status = 'slide'
         elif (event.type, event.key) == (SDL_KEYUP, SDLK_DOWN):
-            player.status = 'idle'
+            player.status = 'idle'"""
 
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
             block += [(Block(event.x, get_canvas_height() - event.y))]
