@@ -4,24 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="24e5d3a0-990a-431a-b5bd-59a41b73970d" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/../2DGP" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kpu_credit.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_state.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_state.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mygame.py" beforeDir="false" afterPath="$PROJECT_DIR$/mygame.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pause.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/show_files.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/simple_module.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/start_state.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/title.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/title_state.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../mayreelrun/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../mayreelrun/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../mayreelrun/mayreel/idle_13.gif" beforeDir="false" />
-    </list>
+    <list default="true" id="24e5d3a0-990a-431a-b5bd-59a41b73970d" name="변경" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
