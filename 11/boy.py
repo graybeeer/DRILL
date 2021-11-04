@@ -98,7 +98,6 @@ class DashState:
             boy.dir = 2
         elif event == SHIFT_DOWN and boy.dir == -1:
             boy.dir = -2
-        boy.timer = 1000
 
     def exit(boy, event):
         pass
@@ -106,10 +105,8 @@ class DashState:
     def do(boy):
         boy.frame = (boy.frame + 1) % 8
         boy.timer -= 1
-        boy.x += boy.dir
+        boy.x += boy.dir * 2
         boy.x = clamp(25, boy.x, 1500 - 25)
-        if boy.timer == 0:
-            boy.add_event(SHIFT_UP)
 
     def draw(boy):
         if boy.velocity == 1:
