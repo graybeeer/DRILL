@@ -94,10 +94,15 @@ class SleepState:
 class DashState:
 
     def enter(boy, event):
-        if event == SHIFT_DOWN and boy.dir == 1:
-            boy.dir = 2
-        elif event == SHIFT_DOWN and boy.dir == -1:
-            boy.dir = -2
+        if event == RIGHT_DOWN:
+            boy.velocity += 1
+        elif event == LEFT_DOWN:
+            boy.velocity -= 1
+        elif event == RIGHT_UP:
+            boy.velocity -= 1
+        elif event == LEFT_UP:
+            boy.velocity += 1
+        boy.dir = boy.velocity
 
     def exit(boy, event):
         pass
