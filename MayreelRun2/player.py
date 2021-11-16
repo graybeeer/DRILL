@@ -26,6 +26,8 @@ key_event_table = {
 
 class JumpState:
     def enter(player, event):
+        if event == JUMP:
+            player.y+=200
         if event == RIGHT_DOWN:
             player.velocity += RUN_SPEED_PPS
         elif event == LEFT_DOWN:
@@ -61,6 +63,8 @@ class JumpState:
 
 class IdleState:
     def enter(player, event):
+        if event == JUMP:
+            player.y+=50
         pass
 
     def exit(player, event):
@@ -71,6 +75,7 @@ class IdleState:
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 14
         if player.col_bottom > 0:
             player.add_event(JUMPING)
+
         pass
 
     def draw(player):
@@ -121,11 +126,11 @@ class RunState:
 
 
 next_state_table = {
-    IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState, RIGHT_DOWN: RunState, LEFT_DOWN: RunState, JUMPING: JumpState},
+    IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState, RIGHT_DOWN: RunState, LEFT_DOWN: RunState, JUMPING: JumpState,JUMP:JumpState},
     RunState: {RIGHT_UP: IdleState, LEFT_UP: IdleState, LEFT_DOWN: IdleState, RIGHT_DOWN: IdleState,
-               JUMPING: JumpState},
+               JUMPING: JumpState,JUMP:JumpState},
     JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState, LEFT_DOWN: JumpState, RIGHT_DOWN: JumpState,
-                LANDING: IdleState},
+                LANDING: IdleState,JUMP:JumpState},
 }
 
 
