@@ -1,4 +1,5 @@
 from pico2d import *
+import game_framework
 import game_world
 
 class Ball:
@@ -13,7 +14,7 @@ class Ball:
         self.image.draw(self.x, self.y)
 
     def update(self):
-        self.x += self.velocity
+        self.x += self.velocity * game_framework.frame_time
 
         if self.x < 25 or self.x > 1600 - 25:
             game_world.remove_object(self)

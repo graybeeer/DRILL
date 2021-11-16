@@ -136,7 +136,7 @@ class Boy:
         self.cur_state.enter(self, None)
 
     def fire_ball(self):
-        ball = Ball(self.x, self.y, self.dir * RUN_SPEED_PPS * 5.2 / 3600)
+        ball = Ball(self.x, self.y, self.dir * RUN_SPEED_PPS * 2)
         game_world.add_object(ball, 1)
 
     def add_event(self, event):
@@ -153,6 +153,7 @@ class Boy:
     def draw(self):
         self.cur_state.draw(self)
         self.font.draw(self.x - 60, self.y + 50, '(Time: %3.2f)' % get_time(), (255, 255, 0))
+        self.font.draw(self.x - 60, self.y + 70, '%s' % self.cur_state, (255, 255, 0))
 
     def handle_event(self, event):
         if (event.type, event.key) in key_event_table:
