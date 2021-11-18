@@ -52,6 +52,7 @@ def enter():
     player = Player()
     game_world.add_object(player, 1)
 
+    
     pass
 
 

@@ -1,7 +1,11 @@
+import json
+import os
+import random
 from pico2d import *
 
 import game_framework
 import game_world
+import map_state
 from player import Player
 
 name = "MainState"
@@ -34,6 +38,8 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
+            game_framework.change_state(map_state)
         player.handle_event(event)
 
 

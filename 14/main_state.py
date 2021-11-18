@@ -15,7 +15,7 @@ name = "MainState"
 
 boy = None
 grass = None
-bird = None
+bird = []
 balls = []
 big_balls = []
 

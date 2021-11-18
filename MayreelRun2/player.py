@@ -24,47 +24,10 @@ key_event_table = {
 }
 
 
-class JumpState:
-    def enter(player, event):
-        if event == JUMP:
-            player.y+=200
-        if event == RIGHT_DOWN:
-            player.velocity += RUN_SPEED_PPS
-        elif event == LEFT_DOWN:
-            player.velocity -= RUN_SPEED_PPS
-        player.dir = clamp(-1, player.velocity, 1)
-        pass
-
-    def exit(player, event):
-        if event == RIGHT_UP:
-            player.velocity -= RUN_SPEED_PPS
-        elif event == LEFT_UP:
-            player.velocity += RUN_SPEED_PPS
-        player.dir = clamp(-1, player.velocity, 1)
-        pass
-
-    def do(player):
-        if player.col_bottom <= 0:
-            player.y = 40
-            player.add_event(LANDING)
-
-        if player.gravity < 500:
-            player.gravity += 1
-        player.x += player.velocity * game_framework.frame_time
-        player.y -= player.gravity * game_framework.frame_time
-        player.x = clamp(25, player.x, 1600 - 25)
-        pass
-
-    def draw(player):
-        player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w,
-                                                 player.image_jump_up.h, 0, '', player.x, player.y)
-        pass
-
-
 class IdleState:
     def enter(player, event):
         if event == JUMP:
-            player.y+=50
+            player.y += 50
         pass
 
     def exit(player, event):
@@ -89,21 +52,14 @@ class IdleState:
         pass
 
 
-class RunState:
+class LeftRunState:
     def enter(player, event):
-        if event == RIGHT_DOWN:
-            player.velocity += RUN_SPEED_PPS
-        elif event == LEFT_DOWN:
-            player.velocity -= RUN_SPEED_PPS
+        player.velocity -= RUN_SPEED_PPS
         player.dir = clamp(-1, player.velocity, 1)
         pass
 
     def exit(player, event):
-        if event == RIGHT_UP:
-            player.velocity -= RUN_SPEED_PPS
-        elif event == LEFT_UP:
-            player.velocity += RUN_SPEED_PPS
-        player.dir = clamp(-1, player.velocity, 1)
+        player.velocity += RUN_SPEED_PPS
         player.frame = 0  # 프레임 초기화
         pass
 
@@ -117,20 +73,161 @@ class RunState:
         pass
 
     def draw(player):
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10, player.y,
+                                              256, 256)
+
+
+class RightRunState:
+    def enter(player, event):
+        player.velocity += RUN_SPEED_PPS
+        player.dir = clamp(-1, player.velocity, 1)
+        pass
+
+    def exit(player, event):
+        player.velocity -= RUN_SPEED_PPS
+        player.frame = 0  # 프레임 초기화
+        pass
+
+    def do(player):
+        player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
+        player.x += player.velocity * game_framework.frame_time
+        player.x = clamp(25, player.x, 1600 - 25)
+        if player.col_bottom > 0:
+            player.add_event(JUMPING)
+        pass
+
+    def draw(player):
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y, 256,
+                                              256)
+        pass
+
+
+class JumpState:
+    def enter(player, event):
+        if event == JUMP:
+            player.jump_power = player.jump_power_max
+            player.gravity = 0
+        pass
+
+    def exit(player, event):
+        pass
+
+    def do(player):
+        if player.gravity < player.gravity_max:
+            player.gravity += 100 * game_framework.frame_time
+        if player.jump_power > 0:
+            player.jump_power -= 100 * game_framework.frame_time
+        player.x += player.velocity * game_framework.frame_time
+        player.y -= player.gravity* game_framework.frame_time
+        player.y += player.jump_power* game_framework.frame_time
+        player.x = clamp(25, player.x, 1600 - 25)
+
+        if player.col_bottom <= 0 and (player.jump_power - player.gravity) <= 0:
+            player.y = 40
+            player.add_event(LANDING)
+        pass
+
+    def draw(player):
         if player.dir > 0:
-            player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y, 256,
-                                                  256)
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                     player.x, player.y)
         else:
-            player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10, player.y,
-                                                  256, 256)
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                     player.x + 10, player.y)
+        pass
+
+
+class LeftJumpState:
+    def enter(player, event):
+        player.velocity -= RUN_SPEED_PPS
+        if event == JUMP:
+            player.jump_power = player.jump_power_max
+            player.gravity = 0
+        player.dir = clamp(-1, player.velocity, 1)
+
+        pass
+
+    def exit(player, event):
+        player.velocity += RUN_SPEED_PPS
+        pass
+
+    def do(player):
+        if player.gravity < player.gravity_max:
+            player.gravity += 100 * game_framework.frame_time
+        if player.jump_power > 0:
+            player.jump_power -= 100 * game_framework.frame_time
+        player.x += player.velocity * game_framework.frame_time
+        player.y += player.jump_power* game_framework.frame_time
+        player.y -= player.gravity* game_framework.frame_time
+
+        player.x = clamp(25, player.x, 1600 - 25)
+
+        if player.col_bottom <= 0 and (player.jump_power - player.gravity) <= 0:
+            player.y = 40
+            player.add_event(LANDING)
+        pass
+
+    def draw(player):
+        player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                 player.x + 10,
+                                                 player.y)
+        pass
+
+
+class RightJumpState:
+    def enter(player, event):
+        player.velocity += RUN_SPEED_PPS
+        if event == JUMP:
+            player.jump_power = player.jump_power_max
+            player.gravity = 0
+        player.dir = clamp(-1, player.velocity, 1)
+        pass
+
+    def exit(player, event):
+        player.velocity -= RUN_SPEED_PPS
+        pass
+
+    def do(player):
+        if player.gravity < player.gravity_max:
+            player.gravity += 100 * game_framework.frame_time
+        if player.jump_power > 0:
+            player.jump_power -= 100 * game_framework.frame_time
+        player.x += player.velocity * game_framework.frame_time
+        player.y += player.jump_power * game_framework.frame_time
+        player.y -= player.gravity * game_framework.frame_time
+        player.x = clamp(25, player.x, 1600 - 25)
+
+        if player.col_bottom <= 0 and (player.jump_power - player.gravity <= 0):
+            player.y = 40
+            player.add_event(LANDING)
+        pass
+
+    def draw(player):
+        player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '', player.x,
+                                                 player.y)
+        pass
 
 
 next_state_table = {
-    IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState, RIGHT_DOWN: RunState, LEFT_DOWN: RunState, JUMPING: JumpState,JUMP:JumpState},
-    RunState: {RIGHT_UP: IdleState, LEFT_UP: IdleState, LEFT_DOWN: IdleState, RIGHT_DOWN: IdleState,
-               JUMPING: JumpState,JUMP:JumpState},
-    JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState, LEFT_DOWN: JumpState, RIGHT_DOWN: JumpState,
-                LANDING: IdleState,JUMP:JumpState},
+    IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState,
+                RIGHT_DOWN: RightRunState, LEFT_DOWN: LeftRunState,
+                JUMPING: JumpState, JUMP: JumpState},
+    LeftRunState: {RIGHT_UP: LeftRunState, LEFT_UP: IdleState,
+                   LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
+                   JUMPING: LeftJumpState, JUMP: LeftJumpState},
+    RightRunState: {RIGHT_UP: IdleState, LEFT_UP: RightRunState,
+                    LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
+                    JUMPING: RightJumpState, JUMP: RightJumpState},
+
+    JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState,
+                LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
+                LANDING: IdleState, JUMP: JumpState},
+    LeftJumpState: {RIGHT_UP: LeftJumpState, LEFT_UP: JumpState,
+                    LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
+                    LANDING: LeftRunState, JUMP: LeftJumpState},
+    RightJumpState: {RIGHT_UP: JumpState, LEFT_UP: RightJumpState,
+                     LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
+                     LANDING: RightRunState, JUMP: RightJumpState}
 }
 
 
@@ -141,13 +238,21 @@ class Player:
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
+        self.col_left_feet = self.x - 20
+        self.col_bottom_feet = self.y - 40
+        self.col_right_feet = self.x + 30
+        self.col_top_feet = self.y - 20
         self.dir = 1
         self.velocity = 0
         self.gravity = 0
+        self.gravity_max = 200
+        self.jump_power = 0
+        self.jump_power_max = 200
         self.frame = 0
         self.event_que = []
         self.cur_state = IdleState
         self.cur_state.enter(self, None)
+        self.font = load_font('ENCR10B.TTF', 16)
         self.image_idle = load_image('Mayreel/idle.png')
         self.image_walk = load_image('Mayreel/walk.png')
         self.image_jump_up = load_image('Mayreel/jump_up/jump_up.png')
@@ -168,13 +273,20 @@ class Player:
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
+        self.col_left_feet = self.x - 20
+        self.col_bottom_feet = self.y - 40
+        self.col_right_feet = self.x + 30
+        self.col_top_feet = self.y - 20
         # ----------------------------
 
         pass
 
     def draw(self):
-        draw_rectangle(self.col_left, self.col_bottom, self.col_right, self.col_top)
         self.cur_state.draw(self)
+        draw_rectangle(self.col_left, self.col_bottom, self.col_right, self.col_top)
+        draw_rectangle(self.col_left_feet, self.col_bottom_feet, self.col_right_feet, self.col_top_feet)
+        self.font.draw(self.x - 60, self.y + 50, '(Time: %3.2f)' % get_time(), (255, 255, 0))
+        self.font.draw(self.x - 60, self.y + 70, '%s' % self.cur_state, (255, 255, 0))
         pass
 
     def handle_event(self, event):
