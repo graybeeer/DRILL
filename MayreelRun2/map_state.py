@@ -58,11 +58,8 @@ def handle_events():
         elif (event.type, event.button) == (SDL_KEYDOWN, SDLK_RIGHT):
             camera_x += 100
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
-            if block is None:
-                block = [(Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50))]
-                game_world.add_object(block[0], 2)
-            else:
-                block += [(Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50))]
+            if Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50) not in block:
+                block += [Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50)]
                 game_world.add_object(block[len(block) - 1], 2)
 
         elif (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_RMASK):  # 마우스 위아래 버튼 아래
