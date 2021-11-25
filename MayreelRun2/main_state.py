@@ -6,16 +6,19 @@ from pico2d import *
 import game_framework
 import game_world
 import map_state
+import server
 from player import Player
+from block import Block
+from sky import Sky
 
 name = "MainState"
-player = None
+
 
 
 def enter():
-    global player
-    player = Player()
-    game_world.add_object(player, 1)
+    server.player = Player()
+    game_world.add_object(server.player, 2)
+    game_world.add_objects(server.block, 1)
     pass
 
 
@@ -40,7 +43,7 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             game_framework.change_state(map_state)
-        player.handle_event(event)
+        server.player.handle_event(event)
 
 
 def update():
