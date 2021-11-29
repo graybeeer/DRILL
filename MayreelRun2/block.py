@@ -27,5 +27,5 @@ class Block:
     def draw(self):
         self.image[self.code].clip_draw(0, 0, self.image[self.code].w, self.image[self.code].h, self.x, self.y, 100,
                                         100)
-        draw_rectangle(self.col_left, self.col_bottom, self.col_right, self.col_top)
+        # draw_rectangle(self.col_left, self.col_bottom, self.col_right, self.col_top)
         # self.font.draw(self.x - 60, self.y + 30, '(x: %3.2f)' % self.x, (255, 255, 0))

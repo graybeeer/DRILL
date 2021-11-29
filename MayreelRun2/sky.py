@@ -1,10 +1,11 @@
 from pico2d import *
 
-import game_framework
 
 class Sky:
     def __init__(self):
         self.image = load_image('map/background_sky.png')
+        self.x = 800
+        self.y = 450
 
     def update(self):
         pass

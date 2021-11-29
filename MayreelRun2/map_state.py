@@ -26,7 +26,7 @@ class UI:
 def enter():
     server.ui = UI()
     server.sky = Sky()
-    # game_world.add_object(sky, 1)
+    #game_world.add_object(server.sky, 1)
     game_world.add_objects(server.block, 1)
     pass
 

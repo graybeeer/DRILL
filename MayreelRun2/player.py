@@ -4,8 +4,8 @@ import collision
 import game_framework
 import server
 
-PIXEL_PER_METER = (10.0 / 0.1)  # 10 pixel 30 cm
-RUN_SPEED_KMPH = 20.0  # Km / Hour
+PIXEL_PER_METER = (10.0 / 0.1)  # 10 pixel 10 cm
+RUN_SPEED_KMPH = 10.0  # Km / Hour
 RUN_SPEED_MPM = (RUN_SPEED_KMPH * 1000.0 / 60.0)
 RUN_SPEED_MPS = (RUN_SPEED_MPM / 60.0)
 RUN_SPEED_PPS = (RUN_SPEED_MPS * PIXEL_PER_METER)
@@ -28,8 +28,6 @@ key_event_table = {
 
 class IdleState:
     def enter(player, event):
-        if event == JUMP:
-            player.y += 50
         pass
 
     def exit(player, event):
@@ -44,12 +42,6 @@ class IdleState:
                 break
             if block == server.block[len(server.block) - 1]:
                 player.add_event(JUMPING)
-        for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-            elif collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
-
         pass
 
     def draw(player):
@@ -78,17 +70,14 @@ class LeftRunState:
 
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
-        player.x = clamp(25, player.x, 1600 - 25)
         for block in server.block:
             if collision.collide(player.get_col_feet(), block.get_col()):
                 break
-            if block == server.block[len(server.block) - 1]:
+            elif block == server.block[len(server.block) - 1]:
                 player.add_event(JUMPING)
         for block in server.block:
             if collision.collide(player.get_col_body_left(), block.get_col()):
                 player.x = 30 + block.col_right
-            elif collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
         pass
 
     def draw(player):
@@ -111,16 +100,13 @@ class RightRunState:
 
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
-        player.x = clamp(25, player.x, 1600 - 25)
         for block in server.block:
             if collision.collide(player.get_col_feet(), block.get_col()):
                 break
-            if block == server.block[len(server.block) - 1]:
+            elif block == server.block[len(server.block) - 1]:
                 player.add_event(JUMPING)
         for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-            elif collision.collide(player.get_col_body_right(), block.get_col()):
+            if collision.collide(player.get_col_body_right(), block.get_col()):
                 player.x = -40 + block.col_left
 
         pass
@@ -136,6 +122,9 @@ class JumpState:
         if event == JUMP:
             player.jump_power = player.jump_power_max
             player.gravity = 0
+        elif event == JUMPING:
+            player.jump_power = 0
+            player.gravity = 0
         pass
 
     def exit(player, event):
@@ -143,13 +132,14 @@ class JumpState:
 
     def do(player):
         if player.gravity < player.gravity_max:
-            player.gravity += 100 * game_framework.frame_time
+            player.gravity += player.gravity_tic * game_framework.frame_time
         if player.jump_power > 0:
-            player.jump_power -= 100 * game_framework.frame_time
+            player.jump_power -= player.jump_power_tic * game_framework.frame_time
+            if player.jump_power <= 0:
+                player.jump_power = 0
         player.x += player.velocity * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
-        player.x = clamp(25, player.x, 1600 - 25)
 
         for block in server.block:
             if collision.collide(player.get_col_feet(), block.get_col()) and (player.jump_power - player.gravity) <= 0:
@@ -158,17 +148,25 @@ class JumpState:
                 break
             elif collision.collide(player.get_col_head(), block.get_col()) and (
                     player.jump_power - player.gravity) > 0:
+                player.y = -40 + block.col_bottom
                 player.jump_power = 0
                 break
 
-
     def draw(player):
         if player.dir > 0:
-            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
-                                                     player.x, player.y)
+            if player.jump_power - player.gravity >= 0:
+                player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                         player.x, player.y)
+            else:
+                player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                           player.x, player.y)
         else:
-            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                     player.x + 10, player.y)
+            if player.jump_power - player.gravity >= 0:
+                player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                         player.x + 10, player.y)
+            else:
+                player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                           player.x + 10, player.y)
         pass
 
 
@@ -178,6 +176,9 @@ class LeftJumpState:
         if event == JUMP:
             player.jump_power = player.jump_power_max
             player.gravity = 0
+        elif event == JUMPING:
+            player.gravity = 0
+            player.jump_power = 0
         player.dir = clamp(-1, player.velocity, 1)
 
         pass
@@ -188,35 +189,41 @@ class LeftJumpState:
 
     def do(player):
         if player.gravity < player.gravity_max:
-            player.gravity += 100 * game_framework.frame_time
+            player.gravity += player.gravity_tic * game_framework.frame_time
+        elif player.gravity >= player.gravity_max:
+            player.gravity=player.gravity_max
         if player.jump_power > 0:
-            player.jump_power -= 100 * game_framework.frame_time
+            player.jump_power -= player.jump_power_tic * game_framework.frame_time
+            if player.jump_power <= 0:
+                player.jump_power = 0
         player.x += player.velocity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
 
-        player.x = clamp(25, player.x, 1600 - 25)
-
         for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (player.jump_power - player.gravity) <= 0:
+            if collision.collide(player.get_col_body_left(), block.get_col()):
+                player.x = 30 + block.col_right
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_feet(), block.get_col()) and (
+                    player.jump_power - player.gravity) <= 0:
                 player.y = 40 + block.col_top
                 player.add_event(LANDING)
-
-            elif collision.collide(player.get_col_head(), block.get_col()) and (
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_head(), block.get_col()) and (
                     player.jump_power - player.gravity) > 0:
+                player.y = -40 + block.col_bottom
                 player.jump_power = 0
-
-            elif collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-
-            elif collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
-
+                break
 
     def draw(player):
-        player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                 player.x + 10,
-                                                 player.y)
+        if player.jump_power - player.gravity >= 0:
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                     player.x + 10, player.y)
+        else:
+            player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                       player.x + 10, player.y)
         pass
 
 
@@ -226,6 +233,9 @@ class RightJumpState:
         if event == JUMP:
             player.jump_power = player.jump_power_max
             player.gravity = 0
+        elif event == JUMPING:
+            player.gravity = 0
+            player.jump_power=0
         player.dir = clamp(-1, player.velocity, 1)
         pass
 
@@ -235,33 +245,39 @@ class RightJumpState:
 
     def do(player):
         if player.gravity < player.gravity_max:
-            player.gravity += 100 * game_framework.frame_time
+            player.gravity += player.gravity_tic * game_framework.frame_time
         if player.jump_power > 0:
-            player.jump_power -= 100 * game_framework.frame_time
+            player.jump_power -= player.jump_power_tic * game_framework.frame_time
+            if player.jump_power <= 0:
+                player.jump_power = 0
         player.x += player.velocity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
-        player.x = clamp(25, player.x, 1600 - 25)
 
         for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (player.jump_power - player.gravity) <= 0:
+            if collision.collide(player.get_col_body_right(), block.get_col()):
+                player.x = -40 + block.col_left
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_feet(), block.get_col()) and (
+                    player.jump_power - player.gravity) <= 0:
                 player.y = 40 + block.col_top
                 player.add_event(LANDING)
-
-            elif collision.collide(player.get_col_head(), block.get_col()) and (
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_head(), block.get_col()) and (
                     player.jump_power - player.gravity) > 0:
+                player.y = -40 + block.col_bottom
                 player.jump_power = 0
-
-            elif collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-
-            elif collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
-
+                break
 
     def draw(player):
-        player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '', player.x,
-                                                 player.y)
+        if player.jump_power - player.gravity >= 0:
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                     player.x, player.y)
+        else:
+            player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                       player.x, player.y)
         pass
 
 
@@ -295,16 +311,14 @@ class Player:
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
-        self.col_left_feet = self.x - 20
-        self.col_bottom_feet = self.y - 40
-        self.col_right_feet = self.x + 30
-        self.col_top_feet = self.y - 20
         self.dir = 1
         self.velocity = 0
         self.gravity = 0
-        self.gravity_max = 200
+        self.gravity_tic = 500  # 프레임당 추가되는 중력
+        self.gravity_max = 700
         self.jump_power = 0
-        self.jump_power_max = 200
+        self.jump_power_tic = 200
+        self.jump_power_max = 600
         self.frame = 0
         self.event_que = []
         self.cur_state = IdleState
@@ -345,10 +359,6 @@ class Player:
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
-        self.col_left_feet = self.x - 20
-        self.col_bottom_feet = self.y - 40
-        self.col_right_feet = self.x + 30
-        self.col_top_feet = self.y - 20
         # ----------------------------
 
         pass
