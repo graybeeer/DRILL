@@ -2,7 +2,9 @@ from pico2d import *
 
 import collision
 import game_framework
+import game_world
 import server
+from stepsmoke import Stepsmoke
 
 PIXEL_PER_METER = (10.0 / 0.1)  # 10 pixel 10 cm
 RUN_SPEED_KMPH = 10.0  # Km / Hour
@@ -11,23 +13,28 @@ RUN_SPEED_MPS = (RUN_SPEED_MPM / 60.0)
 RUN_SPEED_PPS = (RUN_SPEED_MPS * PIXEL_PER_METER)
 
 # Boy Action Speed
-TIME_PER_ACTION = 0.5
+TIME_PER_ACTION = 1.0
 ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
-FRAMES_PER_ACTION = 8
+FRAMES_PER_ACTION = 16
+SHOT_FRAMES_PER_ACTION = 20
 
-RIGHT_DOWN, LEFT_DOWN, RIGHT_UP, LEFT_UP, JUMP, JUMPING, LANDING = range(7)
+
+
+RIGHT_DOWN, LEFT_DOWN, RIGHT_UP, LEFT_UP, JUMP, JUMPING, LANDING, SHOT, SHOTEND = range(9)
 
 key_event_table = {
     (SDL_KEYDOWN, SDLK_RIGHT): RIGHT_DOWN,
     (SDL_KEYDOWN, SDLK_LEFT): LEFT_DOWN,
     (SDL_KEYUP, SDLK_RIGHT): RIGHT_UP,
     (SDL_KEYUP, SDLK_LEFT): LEFT_UP,
-    (SDL_KEYDOWN, SDLK_x): JUMP
+    (SDL_KEYDOWN, SDLK_z): JUMP,
+    (SDL_KEYDOWN, SDLK_x): SHOT
 }
 
 
 class IdleState:
     def enter(player, event):
+        player.jump_count = player.jump_count_max
         pass
 
     def exit(player, event):
@@ -57,6 +64,7 @@ class IdleState:
 
 class LeftRunState:
     def enter(player, event):
+        player.jump_count = player.jump_count_max
         player.velocity -= RUN_SPEED_PPS
         player.dir = clamp(-1, player.velocity, 1)
         pass
@@ -64,12 +72,18 @@ class LeftRunState:
     def exit(player, event):
         player.velocity += RUN_SPEED_PPS
         player.frame = 0  # 프레임 초기화
+        player.frame_step = 0  # 달리기 구름 초기화
         pass
 
     def do(player):
 
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
+        # 달리기 구름 생성 주기
+        player.frame_step = player.frame_step + player.frame_step_speed * game_framework.frame_time
+        if player.frame_step >= player.frame_step_max:
+            player.step(player.col_right, player.col_bottom)
+            player.frame_step -= player.frame_step_max
         for block in server.block:
             if collision.collide(player.get_col_feet(), block.get_col()):
                 break
@@ -87,19 +101,28 @@ class LeftRunState:
 
 class RightRunState:
     def enter(player, event):
+        player.jump_count = player.jump_count_max
         player.velocity += RUN_SPEED_PPS
         player.dir = clamp(-1, player.velocity, 1)
+
         pass
 
     def exit(player, event):
         player.velocity -= RUN_SPEED_PPS
         player.frame = 0  # 프레임 초기화
+        player.frame_step = 0  # 달리기 구름 초기화
         pass
 
     def do(player):
 
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
+        # 달리기 구름 생성 주기
+        player.frame_step = player.frame_step + player.frame_step_speed * game_framework.frame_time
+        if player.frame_step >= player.frame_step_max:
+            player.step(player.col_left, player.col_bottom)
+            player.frame_step -= player.frame_step_max
+
         for block in server.block:
             if collision.collide(player.get_col_feet(), block.get_col()):
                 break
@@ -119,12 +142,14 @@ class RightRunState:
 
 class JumpState:
     def enter(player, event):
-        if event == JUMP:
+        if event == JUMP and player.jump_count > 0:  # 키를 눌러서 점프 상태가 되면 위로 점프
             player.jump_power = player.jump_power_max
             player.gravity = 0
-        elif event == JUMPING:
+            player.jump_count -= 1
+        elif event == JUMPING:  # 발판에서 떨어져서 점프 상태가 됨
             player.jump_power = 0
             player.gravity = 0
+            player.jump_count -= 1
         pass
 
     def exit(player, event):
@@ -173,12 +198,14 @@ class JumpState:
 class LeftJumpState:
     def enter(player, event):
         player.velocity -= RUN_SPEED_PPS
-        if event == JUMP:
+        if event == JUMP and player.jump_count > 0:
             player.jump_power = player.jump_power_max
             player.gravity = 0
+            player.jump_count -= 1
         elif event == JUMPING:
             player.gravity = 0
             player.jump_power = 0
+            player.jump_count -= 1
         player.dir = clamp(-1, player.velocity, 1)
 
         pass
@@ -191,7 +218,7 @@ class LeftJumpState:
         if player.gravity < player.gravity_max:
             player.gravity += player.gravity_tic * game_framework.frame_time
         elif player.gravity >= player.gravity_max:
-            player.gravity=player.gravity_max
+            player.gravity = player.gravity_max
         if player.jump_power > 0:
             player.jump_power -= player.jump_power_tic * game_framework.frame_time
             if player.jump_power <= 0:
@@ -230,12 +257,14 @@ class LeftJumpState:
 class RightJumpState:
     def enter(player, event):
         player.velocity += RUN_SPEED_PPS
-        if event == JUMP:
+        if event == JUMP and player.jump_count > 0:
             player.jump_power = player.jump_power_max
             player.gravity = 0
+            player.jump_count -= 1
         elif event == JUMPING:
             player.gravity = 0
-            player.jump_power=0
+            player.jump_power = 0
+            player.jump_count -= 1
         player.dir = clamp(-1, player.velocity, 1)
         pass
 
@@ -281,26 +310,65 @@ class RightJumpState:
         pass
 
 
+class ShotState:
+    def enter(player, event):
+        pass
+
+    def exit(player, event):
+        if event is None:
+            player.frame = 0  # 프레임 초기화
+            player.frame_shot = 0
+        pass
+
+    def do(player):
+        player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
+        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
+        if player.frame_shot >= player.frame_shot_max:
+            player.frame_shot = 0
+            player.add_event(SHOTEND)
+            #player.add_event(RIGHT_DOWN)
+
+    def draw(player):
+        if player.dir > 0:
+            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y,
+                                                       256, 256)
+        else:
+            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10,
+                                                       player.y, 256, 256)
+        pass
+
+
 next_state_table = {
     IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState,
                 RIGHT_DOWN: RightRunState, LEFT_DOWN: LeftRunState,
-                JUMPING: JumpState, JUMP: JumpState, LANDING: IdleState},
+                JUMPING: JumpState, JUMP: JumpState, LANDING: IdleState,
+                SHOT: ShotState},
     LeftRunState: {RIGHT_UP: LeftRunState, LEFT_UP: IdleState,
                    LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
-                   JUMPING: LeftJumpState, JUMP: LeftJumpState, LANDING: LeftRunState},
+                   JUMPING: LeftJumpState, JUMP: LeftJumpState, LANDING: LeftRunState,
+                   SHOT: ShotState},
     RightRunState: {RIGHT_UP: IdleState, LEFT_UP: RightRunState,
                     LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
-                    JUMPING: RightJumpState, JUMP: RightJumpState, LANDING: RightRunState},
+                    JUMPING: RightJumpState, JUMP: RightJumpState, LANDING: RightRunState,
+                    SHOT: ShotState},
 
     JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState,
                 LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                LANDING: IdleState, JUMP: JumpState, JUMPING: JumpState},
+                LANDING: IdleState, JUMP: JumpState, JUMPING: JumpState,
+                SHOT: ShotState},
     LeftJumpState: {RIGHT_UP: LeftJumpState, LEFT_UP: JumpState,
                     LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                    LANDING: LeftRunState, JUMP: LeftJumpState, JUMPING: LeftJumpState},
+                    LANDING: LeftRunState, JUMP: LeftJumpState, JUMPING: LeftJumpState,
+                    SHOT: ShotState},
     RightJumpState: {RIGHT_UP: JumpState, LEFT_UP: RightJumpState,
                      LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                     LANDING: RightRunState, JUMP: RightJumpState, JUMPING: RightJumpState}
+                     LANDING: RightRunState, JUMP: RightJumpState, JUMPING: RightJumpState,
+                     SHOT: ShotState},
+
+    ShotState: {RIGHT_UP: ShotState, LEFT_UP: ShotState,
+                LEFT_DOWN: ShotState, RIGHT_DOWN: ShotState,
+                JUMPING: ShotState, JUMP: ShotState, LANDING: ShotState,
+                SHOT: ShotState, SHOTEND: IdleState},
 }
 
 
@@ -319,15 +387,24 @@ class Player:
         self.jump_power = 0
         self.jump_power_tic = 200
         self.jump_power_max = 600
+        self.jump_count = 1
+        self.jump_count_max = 1
         self.frame = 0
+        self.frame_shot = 0  # 미사일 발사 준비 시간
+        self.frame_shot_max = 100
+        self.frame_shot_speed = 100
+        self.frame_step = 0  # 대쉬 구름 시간 카운트
+        self.frame_step_max = 100
+        self.frame_step_speed = 900
         self.event_que = []
         self.cur_state = IdleState
         self.cur_state.enter(self, None)
         self.font = load_font('ENCR10B.TTF', 16)
-        self.image_idle = load_image('Mayreel/idle.png')
-        self.image_walk = load_image('Mayreel/walk.png')
+        self.image_idle = load_image('Mayreel/idle/idle.png')
+        self.image_walk = load_image('Mayreel/walk/walk.png')
         self.image_jump_up = load_image('Mayreel/jump_up/jump_up.png')
         self.image_jump_down = load_image('Mayreel/jump_down/jump_down.png')
+        self.image_shot_loop = load_image('Mayreel/shot/shot_loop.png')
 
     def get_col(self):
         return self.x - 30, self.y - 40, self.x + 40, self.y + 40
@@ -346,6 +423,10 @@ class Player:
 
     def add_event(self, event):
         self.event_que.insert(0, event)
+
+    def step(self, x, y):  # 대쉬 시에 달린 자리에 구름 만들기
+        smoke = Stepsmoke(x, y)
+        game_world.add_object(smoke, 1)
 
     def update(self):
         self.cur_state.do(self)

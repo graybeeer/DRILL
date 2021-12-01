@@ -4,7 +4,6 @@ import game_framework
 import game_world
 import main_state
 import server
-from player import Player
 from block import Block
 from sky import Sky
 
@@ -26,7 +25,7 @@ class UI:
 def enter():
     server.ui = UI()
     server.sky = Sky()
-    #game_world.add_object(server.sky, 1)
+    # game_world.add_object(server.sky, 1)
     game_world.add_objects(server.block, 1)
     pass
 
@@ -60,7 +59,7 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_3):
             code = 2
 
-        if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):
+        if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
             camera_x -= 100
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_RIGHT):
             camera_x += 100
@@ -71,7 +70,8 @@ def handle_events():
                         game_world.remove_object(server.block[i])
                         del (server.block[i])
                         break
-            server.block += [Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50, code)]
+            server.block += [
+                Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50, code)]
             game_world.add_object(server.block[len(server.block) - 1], 2)
 
         elif (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_RMASK):  # 마우스 위아래 버튼 아래

@@ -12,7 +12,7 @@ name = "MainState"
 def enter():
     server.sky = Sky()
     server.player = Player()
-    game_world.add_object(server.sky, 1)
+    game_world.add_object(server.sky, 0)
     game_world.add_object(server.player, 2)
     game_world.add_objects(server.block, 1)
 
@@ -46,7 +46,6 @@ def handle_events():
 def update():
     for game_object in game_world.all_objects():
         game_object.update()
-
 
 def draw():
     clear_canvas()
