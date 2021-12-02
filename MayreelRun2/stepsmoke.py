@@ -2,6 +2,7 @@ from pico2d import *
 
 import game_framework
 import game_world
+import server
 
 TIME_PER_ACTION = 1
 ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
@@ -46,5 +47,6 @@ class Stepsmoke:
             self.size = 0.5
 
         self.image[int(self.frame)].clip_draw(0, 0, self.image[int(self.frame)].w, self.image[int(self.frame)].h,
-                                              self.x, self.y, self.image[int(self.frame)].w * self.size,
+                                              self.x + server.cx, self.y + server.cy,
+                                              self.image[int(self.frame)].w * self.size,
                                               self.image[int(self.frame)].h * self.size)

@@ -1,5 +1,7 @@
 from pico2d import *
 
+import server
+
 
 class Block:
     image = None
@@ -21,11 +23,14 @@ class Block:
 
     def get_col(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
+
     def update(self):
         pass
 
     def draw(self):
-        self.image[self.code].clip_draw(0, 0, self.image[self.code].w, self.image[self.code].h, self.x, self.y, 100,
+        self.image[self.code].clip_draw(0, 0, self.image[self.code].w, self.image[self.code].h, self.x + server.cx,
+                                        self.y + server.cy, 100,
                                         100)
         # draw_rectangle(self.col_left, self.col_bottom, self.col_right, self.col_top)
-        # self.font.draw(self.x - 60, self.y + 30, '(x: %3.2f)' % self.x, (255, 255, 0))
+        """self.font.draw(self.x - 60 + server.cx, self.y + server.cy + 30,
+                       '(%.2f,%.2f)' % (self.x + server.cx, self.y + server.cy), (255, 255, 0))"""

@@ -47,9 +47,11 @@ def update():
     for game_object in game_world.all_objects():
         game_object.update()
 
+
+
 def draw():
     clear_canvas()
     for game_object in game_world.all_objects():
-        if -500 < game_object.x < 2500 and -500 < game_object.y < 2500:
+        if -500 < game_object.x+server.cx < 2500 and -500 < game_object.y+server.cy < 1500:
             game_object.draw()
     update_canvas()

@@ -10,8 +10,6 @@ from sky import Sky
 name = "MapState"
 
 code = 0  # 블럭 코드
-camera_x = 0
-camera_y = 0
 
 
 class UI:
@@ -19,12 +17,14 @@ class UI:
         self.font = load_font('ENCR10B.TTF', 16)
 
     def draw(self):
-        self.font.draw(800, 600, '(%d)' % len(server.block), (255, 255, 0))
+        self.font.draw(800, 600, '(%d,%d)' % (server.cx, server.cy), (255, 255, 0))
 
 
 def enter():
     server.ui = UI()
     server.sky = Sky()
+    server.cx = 0
+    server.cy = 0
     # game_world.add_object(server.sky, 1)
     game_world.add_objects(server.block, 1)
     pass
@@ -43,7 +43,7 @@ def resume():
 
 
 def handle_events():
-    global camera_x, camera_y, code
+    global code
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
@@ -60,26 +60,32 @@ def handle_events():
             code = 2
 
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
-            camera_x -= 100
+            server.cx += 100
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_RIGHT):
-            camera_x += 100
-        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
+            server.cx -= 100
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_UP):  # 카메라 이동
+            server.cy -= 100
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):
+            server.cy += 100
+        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK): #마우스 좌클릭 블럭 추가
             for i in range(len(server.block)):
-                if server.block[i].col_left < event.x < server.block[i].col_right:
-                    if server.block[i].col_bottom < get_canvas_height() - event.y < server.block[i].col_top:
+                if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
+                    if server.block[i].col_bottom < get_canvas_height() - event.y - server.cy < server.block[i].col_top:
                         game_world.remove_object(server.block[i])
                         del (server.block[i])
                         break
             server.block += [
-                Block(100 * (event.x // 100) + 50, 100 * ((get_canvas_height() - event.y) // 100) + 50, code)]
+                Block(100 * ((event.x - server.cx) // 100) + 50,
+                      100 * ((get_canvas_height() - event.y - server.cy) // 100) + 50, code)]
             game_world.add_object(server.block[len(server.block) - 1], 2)
 
         elif (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_RMASK):  # 마우스 위아래 버튼 아래
 
             if server.block is not None:
                 for i in range(len(server.block)):
-                    if server.block[i].col_left < event.x < server.block[i].col_right:
-                        if server.block[i].col_bottom < get_canvas_height() - event.y < server.block[i].col_top:
+                    if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
+                        if server.block[i].col_bottom < get_canvas_height() - event.y - server.cy < server.block[
+                            i].col_top:
                             game_world.remove_object(server.block[i])
                             del (server.block[i])
                             break
@@ -93,7 +99,8 @@ def update():
 def draw():
     clear_canvas()
     for game_object in game_world.all_objects():
-        game_object.draw()
+        if -500 < game_object.x + server.cx < 2500 and -500 < game_object.y + server.cy < 1500:
+            game_object.draw()
     server.ui.draw()
 
     update_canvas()

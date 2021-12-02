@@ -18,8 +18,6 @@ ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
 FRAMES_PER_ACTION = 16
 SHOT_FRAMES_PER_ACTION = 20
 
-
-
 RIGHT_DOWN, LEFT_DOWN, RIGHT_UP, LEFT_UP, JUMP, JUMPING, LANDING, SHOT, SHOTEND = range(9)
 
 key_event_table = {
@@ -53,10 +51,12 @@ class IdleState:
 
     def draw(player):
         if player.dir > 0:
-            player.image_idle.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y, 256,
+            player.image_idle.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.cx, player.cy,
+                                                  256,
                                                   256)
         else:
-            player.image_idle.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10, player.y,
+            player.image_idle.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.cx + 10,
+                                                  player.cy,
                                                   256, 256)
 
         pass
@@ -95,7 +95,7 @@ class LeftRunState:
         pass
 
     def draw(player):
-        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10, player.y,
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.cx + 10, player.cy,
                                               256, 256)
 
 
@@ -135,7 +135,7 @@ class RightRunState:
         pass
 
     def draw(player):
-        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y, 256,
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.cx, player.cy, 256,
                                               256)
         pass
 
@@ -158,6 +158,8 @@ class JumpState:
     def do(player):
         if player.gravity < player.gravity_max:
             player.gravity += player.gravity_tic * game_framework.frame_time
+        elif player.gravity >= player.gravity_max:
+            player.gravity == player.gravity_max
         if player.jump_power > 0:
             player.jump_power -= player.jump_power_tic * game_framework.frame_time
             if player.jump_power <= 0:
@@ -181,17 +183,17 @@ class JumpState:
         if player.dir > 0:
             if player.jump_power - player.gravity >= 0:
                 player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
-                                                         player.x, player.y)
+                                                         player.cx, player.cy)
             else:
                 player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
-                                                           player.x, player.y)
+                                                           player.cx, player.cy)
         else:
             if player.jump_power - player.gravity >= 0:
                 player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                         player.x + 10, player.y)
+                                                         player.cx + 10, player.cy)
             else:
                 player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                           player.x + 10, player.y)
+                                                           player.cx + 10, player.cy)
         pass
 
 
@@ -247,10 +249,10 @@ class LeftJumpState:
     def draw(player):
         if player.jump_power - player.gravity >= 0:
             player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                     player.x + 10, player.y)
+                                                     player.cx + 10, player.cy)
         else:
             player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
-                                                       player.x + 10, player.y)
+                                                       player.cx + 10, player.cy)
         pass
 
 
@@ -275,6 +277,8 @@ class RightJumpState:
     def do(player):
         if player.gravity < player.gravity_max:
             player.gravity += player.gravity_tic * game_framework.frame_time
+        elif player.gravity >= player.gravity_max:
+            player.gravity == player.gravity_max
         if player.jump_power > 0:
             player.jump_power -= player.jump_power_tic * game_framework.frame_time
             if player.jump_power <= 0:
@@ -303,14 +307,14 @@ class RightJumpState:
     def draw(player):
         if player.jump_power - player.gravity >= 0:
             player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
-                                                     player.x, player.y)
+                                                     player.cx, player.cy)
         else:
             player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
-                                                       player.x, player.y)
+                                                       player.cx, player.cy)
         pass
 
 
-class ShotState:
+class ShotIdleState:
     def enter(player, event):
         pass
 
@@ -323,18 +327,54 @@ class ShotState:
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
         player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:
+        if player.gravity < player.gravity_max:  # 최대까지 중력 증가
+            player.gravity += player.gravity_tic * game_framework.frame_time
+        elif player.gravity >= player.gravity_max:
+            player.gravity = player.gravity_max
+        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
             player.frame_shot = 0
-            player.add_event(SHOTEND)
-            #player.add_event(RIGHT_DOWN)
+            player.add_event(SHOTEND)  # 미사일 발사
+            # player.add_event(RIGHT_DOWN)
+
+        player.x += player.velocity * game_framework.frame_time
+        player.y += player.jump_power * game_framework.frame_time
+        player.y -= player.gravity * game_framework.frame_time
+
+        for block in server.block:
+            if collision.collide(player.get_col_body_right(), block.get_col()):
+                player.x = -40 + block.col_left
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_body_left(), block.get_col()):
+                player.x = 30 + block.col_right
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_feet(), block.get_col()) and (
+                    player.jump_power - player.gravity) <= 0:
+                player.y = 40 + block.col_top
+                player.add_event(LANDING)
+                break
+        for block in server.block:
+            if collision.collide(player.get_col_head(), block.get_col()) and (
+                    player.jump_power - player.gravity) > 0:
+                player.y = -40 + block.col_bottom
+                player.jump_power = 0
+                break
 
     def draw(player):
         if player.dir > 0:
-            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.x, player.y,
+            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.cx,
+                                                       player.cy,
                                                        256, 256)
         else:
-            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.x + 10,
-                                                       player.y, 256, 256)
+            player.image_shot_loop.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.cx + 10,
+                                                       player.cy, 256, 256)
+        pass
+class ShotLeftRunState:
+    def enter(player, event):
+        pass
+
+    def exit(player, event):
         pass
 
 
@@ -342,43 +382,48 @@ next_state_table = {
     IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState,
                 RIGHT_DOWN: RightRunState, LEFT_DOWN: LeftRunState,
                 JUMPING: JumpState, JUMP: JumpState, LANDING: IdleState,
-                SHOT: ShotState},
+                SHOT: ShotIdleState},
     LeftRunState: {RIGHT_UP: LeftRunState, LEFT_UP: IdleState,
                    LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
                    JUMPING: LeftJumpState, JUMP: LeftJumpState, LANDING: LeftRunState,
-                   SHOT: ShotState},
+                   SHOT: ShotIdleState},
     RightRunState: {RIGHT_UP: IdleState, LEFT_UP: RightRunState,
                     LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
                     JUMPING: RightJumpState, JUMP: RightJumpState, LANDING: RightRunState,
-                    SHOT: ShotState},
+                    SHOT: ShotIdleState},
 
     JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState,
                 LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
                 LANDING: IdleState, JUMP: JumpState, JUMPING: JumpState,
-                SHOT: ShotState},
+                SHOT: ShotIdleState},
     LeftJumpState: {RIGHT_UP: LeftJumpState, LEFT_UP: JumpState,
                     LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
                     LANDING: LeftRunState, JUMP: LeftJumpState, JUMPING: LeftJumpState,
-                    SHOT: ShotState},
+                    SHOT: ShotIdleState},
     RightJumpState: {RIGHT_UP: JumpState, LEFT_UP: RightJumpState,
                      LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
                      LANDING: RightRunState, JUMP: RightJumpState, JUMPING: RightJumpState,
-                     SHOT: ShotState},
+                     SHOT: ShotIdleState},
 
-    ShotState: {RIGHT_UP: ShotState, LEFT_UP: ShotState,
-                LEFT_DOWN: ShotState, RIGHT_DOWN: ShotState,
-                JUMPING: ShotState, JUMP: ShotState, LANDING: ShotState,
-                SHOT: ShotState, SHOTEND: IdleState},
+    ShotIdleState: {RIGHT_UP: ShotIdleState, LEFT_UP: ShotIdleState,
+                LEFT_DOWN: ShotLeftRunState, RIGHT_DOWN: ShotRightRunState,
+                JUMPING: ShotJumpState, JUMP: ShotJumpState, LANDING: ShotIdleState,
+                SHOT: ShotIdleState, SHOTEND: IdleState},
 }
 
 
 class Player:
     def __init__(self):
         self.x, self.y = 900, 900
+        self.cx, self.cy = 800, 450
         self.col_left = self.x - 30
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
+        self.col_left_c = self.cx - 30
+        self.col_bottom_c = self.cy - 40
+        self.col_right_c = self.cx + 40
+        self.col_top_c = self.cy + 40
         self.dir = 1
         self.velocity = 0
         self.gravity = 0
@@ -441,18 +486,21 @@ class Player:
         self.col_right = self.x + 40
         self.col_top = self.y + 40
         # ----------------------------
-
+        server.cx = -self.x + self.cx
+        server.cy = -self.y + self.cy
         pass
 
     def draw(self):
         self.cur_state.draw(self)
-        draw_rectangle(*self.get_col())
+        """draw_rectangle(*self.get_col())
         draw_rectangle(*self.get_col_feet())
         draw_rectangle(*self.get_col_head())
         draw_rectangle(*self.get_col_body_right())
-        draw_rectangle(*self.get_col_body_left())
-        self.font.draw(self.x - 60, self.y + 50, '(Time: %3.2f)' % get_time(), (255, 255, 0))
-        self.font.draw(self.x - 60, self.y + 70, '%s' % self.cur_state, (255, 255, 0))
+        draw_rectangle(*self.get_col_body_left())"""
+
+        self.font.draw(self.cx - 60, self.cy + 50, '%s' % self.cur_state, (255, 255, 0))
+        self.font.draw(self.cx - 60, self.cy + 70, '(%.2f %.2f)' % (self.x, self.y), (255, 255, 0))
+        self.font.draw(self.cx - 60, self.cy + 90, '(%d %d)' % (server.cx, server.cy), (255, 255, 0))
         pass
 
     def handle_event(self, event):
