@@ -6,21 +6,26 @@ import map_state
 import server
 from player import Player
 from sky import Sky
+
 name = "MainState"
+sky = None
 
 
 def enter():
-    server.sky = Sky()
+    global sky
+    sky = Sky()
     server.player = Player()
-    game_world.add_object(server.sky, 0)
-    game_world.add_object(server.player, 2)
+    game_world.add_object(server.player, 3)
     game_world.add_objects(server.block, 1)
+    game_world.add_objects(server.block_sleep, 1)
+    game_world.add_objects(server.monster, 2)
 
     pass
 
 
 def exit():
     game_world.clear()
+    del server.player
 
 
 def pause():
@@ -40,7 +45,8 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             game_framework.change_state(map_state)
-        server.player.handle_event(event)
+        if server.player is not None:
+            server.player.handle_event(event)
 
 
 def update():
@@ -48,10 +54,10 @@ def update():
         game_object.update()
 
 
-
 def draw():
     clear_canvas()
+    sky.draw()
     for game_object in game_world.all_objects():
-        if -500 < game_object.x+server.cx < 2500 and -500 < game_object.y+server.cy < 1500:
+        if -500 < game_object.x + server.cx < 2500 and -500 < game_object.y + server.cy < 1500:
             game_object.draw()
     update_canvas()

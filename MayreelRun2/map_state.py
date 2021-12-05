@@ -5,11 +5,13 @@ import game_world
 import main_state
 import server
 from block import Block
+from ddat import Ddat
 from sky import Sky
 
 name = "MapState"
 
-code = 0  # 블럭 코드
+code = 0  # 코드 숫자
+code_class = 'block'  # 코드 종류
 
 
 class UI:
@@ -22,11 +24,12 @@ class UI:
 
 def enter():
     server.ui = UI()
-    server.sky = Sky()
     server.cx = 0
     server.cy = 0
-    # game_world.add_object(server.sky, 1)
+    server.player = None
     game_world.add_objects(server.block, 1)
+    game_world.add_objects(server.block_sleep, 1)
+    game_world.add_objects(server.monster, 2)
     pass
 
 
@@ -43,7 +46,7 @@ def resume():
 
 
 def handle_events():
-    global code
+    global code, code_class
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
@@ -54,10 +57,16 @@ def handle_events():
             game_framework.change_state(main_state)
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_1):
             code = 0
+            code_class = 'block'
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_2):
             code = 1
+            code_class = 'block'
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_3):
             code = 2
+            code_class = 'block'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_4):
+            code = 0
+            code_class = 'monster'
 
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
             server.cx += 100
@@ -67,20 +76,36 @@ def handle_events():
             server.cy -= 100
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):
             server.cy += 100
-        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK): #마우스 좌클릭 블럭 추가
+        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):  # 마우스 좌클릭 블럭 추가
             for i in range(len(server.block)):
                 if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
-                    if server.block[i].col_bottom < get_canvas_height() - event.y - server.cy < server.block[i].col_top:
+                    if server.block[i].col_bottom < get_canvas_height() - event.y - server.cy < server.block[
+                        i].col_top:
                         game_world.remove_object(server.block[i])
                         del (server.block[i])
                         break
-            server.block += [
-                Block(100 * ((event.x - server.cx) // 100) + 50,
-                      100 * ((get_canvas_height() - event.y - server.cy) // 100) + 50, code)]
-            game_world.add_object(server.block[len(server.block) - 1], 2)
+            for i in range(len(server.monster)):
+                if server.monster[i].x - 50 < event.x - server.cx < server.monster[i].x + 50:
+                    if server.monster[i].col_bottom < get_canvas_height() - event.y - server.cy < server.monster[
+                        i].col_bottom + 100:
+                        game_world.remove_object(server.monster[i])
+                        del (server.monster[i])
+                        break
+            if code_class == 'block':
+                server.block += [
+                    Block(100 * ((event.x - server.cx) // 100) + 50,
+                          100 * ((get_canvas_height() - event.y - server.cy) // 100) + 50, code)]
+                game_world.add_object(server.block[len(server.block) - 1], 2)
+
+            elif code_class == 'monster':
+                if code == 0:
+                    server.monster += [
+                        Ddat(100 * ((event.x - server.cx) // 100) + 50,
+                             100 * ((get_canvas_height() - event.y - server.cy) // 100) + 80)]
+                    game_world.add_object(server.monster[len(server.monster) - 1], 2)
+
 
         elif (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_RMASK):  # 마우스 위아래 버튼 아래
-
             if server.block is not None:
                 for i in range(len(server.block)):
                     if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
@@ -88,6 +113,14 @@ def handle_events():
                             i].col_top:
                             game_world.remove_object(server.block[i])
                             del (server.block[i])
+                            break
+            if server.monster is not None:
+                for i in range(len(server.monster)):
+                    if server.monster[i].x - 50 < event.x - server.cx < server.monster[i].x + 50:
+                        if server.monster[i].col_bottom < get_canvas_height() - event.y - server.cy < server.monster[
+                            i].col_bottom + 100:
+                            game_world.remove_object(server.monster[i])
+                            del (server.monster[i])
                             break
 
 
