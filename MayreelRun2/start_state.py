@@ -2,6 +2,7 @@ from pico2d import *
 
 import game_framework
 import main_state
+import map_state
 
 name = "StartState"
 start_menu = None
@@ -18,6 +19,7 @@ class StartMenu:
     def draw(self):
         self.image.clip_draw(0, 0, self.image.w, self.image.h, 800, 450, 1600, 900)
         self.font.draw(1150, 730, '%s' % ("GAME START"), (0, 0, 0))
+        self.font.draw(1150, 530, '%s' % ("MAP EDITOR"), (0, 0, 0))
 
 
 def enter():
@@ -46,8 +48,10 @@ def handle_events():
             game_framework.quit()
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
             if 1100 < event.x < 1600:
-                if 600 < get_canvas_height() - event.y < 800:
+                if 650 < get_canvas_height() - event.y < 750:
                     game_framework.change_state(main_state)
+                elif 450 < get_canvas_height() - event.y < 550:
+                    game_framework.change_state(map_state)
 
 
 def update():

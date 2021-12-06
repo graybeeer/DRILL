@@ -6,20 +6,29 @@ import map_state
 import server
 from player import Player
 from sky import Sky
+from block import Block
 
 name = "MainState"
 sky = None
 
+class UI:
+    def __init__(self):
+        self.font = load_font('ENCR10B.TTF', 16)
 
+    def draw(self):
+        self.font.draw(800, 600, '(%d,%d)' % (server.player_area_x, server.player_area_y), (0, 0, 0))
+        self.font.draw(800, 700, '(%d,%d)' % (len(server.block), len(server.block_sleep)), (0, 0, 0))
 def enter():
-    global sky
+    global sky,ui
     sky = Sky()
+    ui=UI()
     server.player = Player()
     game_world.add_object(server.player, 3)
     game_world.add_objects(server.block, 1)
     game_world.add_objects(server.block_sleep, 1)
     game_world.add_objects(server.monster, 2)
-
+    for block in (server.block+server.block_sleep):
+        block.block_update()
     pass
 
 
@@ -57,6 +66,7 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
+    ui.draw()
     for game_object in game_world.all_objects():
         if -500 < game_object.x + server.cx < 2500 and -500 < game_object.y + server.cy < 1500:
             game_object.draw()

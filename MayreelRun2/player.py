@@ -358,14 +358,14 @@ class ShotIdleState:
     def exit(player, event):
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
     def draw(player):
@@ -389,14 +389,14 @@ class ShotLeftRunState:
         player.velocity += RUN_SPEED_PPS
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
         player.x += player.velocity * game_framework.frame_time  # 플레이어 x축 이동
@@ -431,14 +431,14 @@ class ShotRightRunState:
         player.velocity -= RUN_SPEED_PPS
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
         player.x += player.velocity * game_framework.frame_time  # 플레이어 x축 이동
@@ -479,14 +479,14 @@ class ShotJumpState:
     def exit(player, event):
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
         if player.gravity < player.gravity_max:  # 최대까지 중력 증가
@@ -541,14 +541,14 @@ class ShotLeftJumpState:
         player.velocity += RUN_SPEED_PPS
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
         if player.gravity < player.gravity_max:  # 최대까지 중력 증가
@@ -608,14 +608,14 @@ class ShotRightJumpState:
         player.velocity -= RUN_SPEED_PPS
         if event is None:
             player.frame = 0  # 프레임 초기화
-            player.frame_shot = 0
+            player.timer_shot = 0
         pass
 
     def do(player):
         player.frame = (player.frame + SHOT_FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 3
-        player.frame_shot = player.frame_shot + player.frame_shot_speed * game_framework.frame_time
-        if player.frame_shot >= player.frame_shot_max:  # 미사일 발사 시간 충전
-            player.frame_shot = 0
+        player.timer_shot = player.timer_shot + player.timer_shot_speed * game_framework.frame_time
+        if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
+            player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
         if player.gravity < player.gravity_max:  # 최대까지 중력 증가
@@ -716,7 +716,7 @@ next_state_table = {
 
 class Player:
     def __init__(self):
-        self.x, self.y = 900, 900
+        self.x, self.y = server.player_start_x, server.player_start_y
         self.cx, self.cy = 800, 450
         self.col_left = self.x - 30
         self.col_bottom = self.y - 40
@@ -738,12 +738,12 @@ class Player:
         self.jump_count = 1  # 점프 카운트
         self.jump_count_max = 1  # 최대 가능 점프 횟수
         self.frame = 0
-        self.frame_shot = 0  # 미사일 발사 준비 시간
-        self.frame_shot_max = 100
-        self.frame_shot_speed = 100
+        self.timer_shot = 0  # 미사일 발사 준비 시간
+        self.timer_shot_max = 100
+        self.timer_shot_speed = 100
         self.frame_step = 0  # 대쉬 구름 시간 카운트
         self.frame_step_max = 100
-        self.frame_step_speed = 900
+        self.frame_step_speed = 800
         # ---------------------------------------------- 플레이어 상태
         self.event_que = []
         self.cur_state = IdleState
@@ -797,6 +797,8 @@ class Player:
         game_world.add_object(smoke, 1)
 
     def update(self):
+        temp_x = server.player_area_x
+        temp_y = server.player_area_y
         self.cur_state.do(self)
         if len(self.event_que) > 0:
             event = self.event_que.pop()
@@ -804,11 +806,30 @@ class Player:
             self.cur_state = next_state_table[self.cur_state][event]
             self.cur_state.enter(self, event)
         # ---------------------------- 플레이어 콜라이더 위치 변경
+        self.x = clamp(30, self.x, 5000)  # 플레이어 위치 제한
+        self.y = clamp(40, self.y, 5000)
+        server.player_area_x = self.x // server.map_area_size_x
+        server.player_area_y = self.y // server.map_area_size_y
+        if temp_x != server.player_area_x:  # 플레이어가 있는 구역이 변화되면
+            for block in (server.block + server.block_sleep): # 블럭 상태 업데이트
+                block.block_update()
+        elif temp_y != server.player_area_y:
+            for block in (server.block + server.block_sleep):  # 블럭 상태 업데이트
+                block.block_update()
+
         self.col_left = self.x - 30
         self.col_bottom = self.y - 40
         self.col_right = self.x + 40
         self.col_top = self.y + 40
         # ----------------------------
+        if self.x <= 800:
+            self.cx = self.x
+        elif self.x > 800:
+            self.cx = 800
+        if self.y <= 450:
+            self.cy = self.y
+        elif self.y > 450:
+            self.cy = 450
         server.cx = -self.x + self.cx
         server.cy = -self.y + self.cy
         # ----------------------------

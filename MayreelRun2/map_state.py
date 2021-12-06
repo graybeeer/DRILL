@@ -6,7 +6,6 @@ import main_state
 import server
 from block import Block
 from ddat import Ddat
-from sky import Sky
 
 name = "MapState"
 
@@ -16,10 +15,12 @@ code_class = 'block'  # 코드 종류
 
 class UI:
     def __init__(self):
-        self.font = load_font('ENCR10B.TTF', 16)
+        self.font = load_font('a시월구일2.ttf', 20)
 
     def draw(self):
-        self.font.draw(800, 600, '(%d,%d)' % (server.cx, server.cy), (255, 255, 0))
+        for i in range(server.map_area_x):
+            for j in range(server.map_area_y):
+                self.font.draw(50 + 1000 * i + server.cx, 950 + 1000 * j + server.cy, '(%d,%d)' % (i, j), (0, 0, 0))
 
 
 def enter():
@@ -70,12 +71,16 @@ def handle_events():
 
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
             server.cx += 100
+            server.cx = clamp(-5000, server.cx, 0)  # 카메라 범위 제한
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_RIGHT):
             server.cx -= 100
+            server.cx = clamp(-5000, server.cx, 0)
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_UP):  # 카메라 이동
             server.cy -= 100
+            server.cy = clamp(-5000, server.cy, 0)
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):
             server.cy += 100
+            server.cy = clamp(-5000, server.cy, 0)
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):  # 마우스 좌클릭 블럭 추가
             for i in range(len(server.block)):
                 if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
@@ -132,8 +137,14 @@ def update():
 def draw():
     clear_canvas()
     for game_object in game_world.all_objects():
-        if -500 < game_object.x + server.cx < 2500 and -500 < game_object.y + server.cy < 1500:
-            game_object.draw()
+        game_object.draw()
+    for i in range(10):
+        for j in range(10):
+            draw_rectangle(1000 * i + server.cx, 1000 * i + server.cy, 1000 * (j + 1) + server.cx,
+                           1000 * (j + 1) + server.cy)
     server.ui.draw()
 
     update_canvas()
+
+def save():
+    pass
