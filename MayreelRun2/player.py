@@ -17,15 +17,19 @@ ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
 FRAMES_PER_ACTION = 16
 SHOT_FRAMES_PER_ACTION = 20
 
-RIGHT_DOWN, LEFT_DOWN, RIGHT_UP, LEFT_UP, JUMP, JUMPING, LANDING, SHOT, SHOT_END, HIT_BLOCK, HIT_MONSTER = range(11)
+RIGHT_DOWN, LEFT_DOWN, RIGHT_UP, LEFT_UP, RUN_DOWN, RUN_UP, JUMP, JUMPING, LANDING, SHOT, SHOT_END, HIT_BLOCK, HIT_MONSTER = range(
+    13)
 
 key_event_table = {
     (SDL_KEYDOWN, SDLK_RIGHT): RIGHT_DOWN,
     (SDL_KEYDOWN, SDLK_LEFT): LEFT_DOWN,
     (SDL_KEYUP, SDLK_RIGHT): RIGHT_UP,
     (SDL_KEYUP, SDLK_LEFT): LEFT_UP,
-    (SDL_KEYDOWN, SDLK_z): JUMP,
-    (SDL_KEYDOWN, SDLK_x): SHOT
+    (SDL_KEYDOWN, SDLK_z): RUN_DOWN,
+    (SDL_KEYUP, SDLK_z): RUN_UP,
+    (SDL_KEYDOWN, SDLK_x): JUMP,
+    (SDL_KEYDOWN, SDLK_c): SHOT,
+
 }
 
 
@@ -35,17 +39,14 @@ class IdleState:
         pass
 
     def exit(player, event):
-        player.frame = 0  # 프레임 초기화
+        if event is None:
+            player.frame = 0  # 프레임 초기화
         pass
 
     def do(player):
 
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 14
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()):
-                break
-            if block == server.block[len(server.block) - 1]:
-                player.add_event(JUMPING)
+        player.jumping_check()
         pass
 
     def draw(player):
@@ -60,7 +61,7 @@ class IdleState:
         pass
 
 
-class LeftRunState:
+class LeftWalkState:
     def enter(player, event):
         player.jump_count = player.jump_count_max
         player.velocity -= RUN_SPEED_PPS
@@ -70,26 +71,15 @@ class LeftRunState:
     def exit(player, event):
         player.velocity += RUN_SPEED_PPS
         player.frame = 0  # 프레임 초기화
-        player.frame_step = 0  # 달리기 구름 초기화
+        player.frame_step = 0  # 달리기 구름 초기
         pass
 
     def do(player):
-
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
-        # 달리기 구름 생성 주기
-        player.frame_step = player.frame_step + player.frame_step_speed * game_framework.frame_time
-        if player.frame_step >= player.frame_step_max:
-            player.step(player.col_right, player.col_bottom)
-            player.frame_step -= player.frame_step_max
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()):
-                break
-            elif block == server.block[len(server.block) - 1]:
-                player.add_event(JUMPING)
-        for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
+        player.jumping_check()
+        player.block_collide_left()
+
         pass
 
     def draw(player):
@@ -97,7 +87,7 @@ class LeftRunState:
                                               256, 256)
 
 
-class RightRunState:
+class RightWalkState:
     def enter(player, event):
         player.jump_count = player.jump_count_max
         player.velocity += RUN_SPEED_PPS
@@ -112,23 +102,70 @@ class RightRunState:
         pass
 
     def do(player):
-
         player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 11
         player.x += player.velocity * game_framework.frame_time
-        # 달리기 구름 생성 주기
-        player.frame_step = player.frame_step + player.frame_step_speed * game_framework.frame_time
-        if player.frame_step >= player.frame_step_max:
-            player.step(player.col_left, player.col_bottom)
-            player.frame_step -= player.frame_step_max
+        player.jumping_check()
+        player.block_collide_right()
 
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()):
-                break
-            elif block == server.block[len(server.block) - 1]:
-                player.add_event(JUMPING)
-        for block in server.block:
-            if collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
+        pass
+
+    def draw(player):
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, '', player.cx, player.cy, 256,
+                                              256)
+        pass
+
+
+class LeftRunState:
+    def enter(player, event):
+        player.jump_count = player.jump_count_max
+        player.velocity -= RUN_SPEED_PPS * 1.5
+        player.dir = clamp(-1, player.velocity, 1)
+        pass
+
+    def exit(player, event):
+        player.velocity += RUN_SPEED_PPS * 1.5
+        player.frame = 0  # 프레임 초기화
+        player.frame_step = 0  # 달리기 구름 초기화
+        pass
+
+    def do(player):
+        player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time * 1.5) % 11
+        player.x += player.velocity * game_framework.frame_time
+        # 달리기 구름 생성 주기
+
+        player.step(player.col_right, player.col_bottom)
+        player.jumping_check()
+        player.block_collide_left()
+
+        pass
+
+    def draw(player):
+        player.image_walk.clip_composite_draw(int(player.frame) * 256, 0, 256, 256, 0, 'h', player.cx + 10,
+                                              player.cy,
+                                              256, 256)
+
+
+class RightRunState:
+    def enter(player, event):
+        player.jump_count = player.jump_count_max
+        player.velocity += RUN_SPEED_PPS * 1.5
+        player.dir = clamp(-1, player.velocity, 1)
+
+        pass
+
+    def exit(player, event):
+        player.velocity -= RUN_SPEED_PPS * 1.5
+        player.frame = 0  # 프레임 초기화
+        player.frame_step = 0  # 달리기 구름 초기화
+        pass
+
+    def do(player):
+        player.frame = (player.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time * 1.5) % 11
+        player.x += player.velocity * game_framework.frame_time
+        # 달리기 구름 생성 주기
+        player.step(player.col_left, player.col_bottom)
+        player.jumping_check()
+        player.block_collide_right()
 
         pass
 
@@ -154,29 +191,13 @@ class JumpState:
         pass
 
     def do(player):
-        if player.gravity < player.gravity_max:
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity = player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
-
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (
-                    player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-            elif collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.block_collide_left()
+        player.block_collide_right()
+        player.landing_feet_head()
 
     def draw(player):
         if player.dir > 0:
@@ -213,37 +234,22 @@ class LeftJumpState:
 
     def exit(player, event):
         player.velocity += RUN_SPEED_PPS
+        if event == JUMP and player.climb is True:
+            player.power = player.power_climb
+            player.jump_power = player.jump_power_max
+            player.gravity = player.gravity_max*0.5
+            player.climb = False
         pass
 
     def do(player):
-        if player.gravity < player.gravity_max:
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity = player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
 
-        for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (
-                    player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.block_collide_left()
+        player.block_collide_right()
+        player.landing_feet_head()
 
     def draw(player):
         if player.jump_power - player.gravity >= 0:
@@ -271,37 +277,109 @@ class RightJumpState:
 
     def exit(player, event):
         player.velocity -= RUN_SPEED_PPS
+        if event == JUMP and player.climb is True:
+            player.power = -player.power_climb
+            player.jump_power = player.jump_power_max
+            player.gravity = player.gravity_max*0.5
+            player.climb = False
         pass
 
     def do(player):
-        if player.gravity < player.gravity_max:
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity == player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
 
-        for block in server.block:
-            if collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (
-                    player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.block_collide_left()
+        player.block_collide_right()
+        player.landing_feet_head()
+
+    def draw(player):
+        if player.jump_power - player.gravity >= 0:
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                     player.cx, player.cy)
+        else:
+            player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, '',
+                                                       player.cx, player.cy)
+        pass
+
+
+class LeftJumpRunState:
+    def enter(player, event):
+        player.velocity -= RUN_SPEED_PPS * 1.5
+        if event == JUMP and player.jump_count > 0:
+            player.jump_power = player.jump_power_max
+            player.gravity = 0
+            player.jump_count -= 1
+        elif event == JUMPING:
+            player.gravity = 0
+            player.jump_power = 0
+            player.jump_count -= 1
+        player.dir = clamp(-1, player.velocity, 1)
+
+        pass
+
+    def exit(player, event):
+        player.velocity += RUN_SPEED_PPS * 1.5
+        if event == JUMP and player.climb is True:
+            player.power = player.power_climb
+            player.jump_power = player.jump_power_max
+            player.gravity = player.gravity_max*0.5
+            player.climb = False
+        pass
+
+    def do(player):
+        player.jump_gravity()
+        player.x += player.velocity * game_framework.frame_time
+        player.y += player.jump_power * game_framework.frame_time
+        player.y -= player.gravity * game_framework.frame_time
+
+        player.block_collide_left()
+        player.block_collide_right()
+        player.landing_feet_head()
+
+    def draw(player):
+        if player.jump_power - player.gravity >= 0:
+            player.image_jump_up.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                     player.cx + 10, player.cy)
+        else:
+            player.image_jump_down.clip_composite_draw(0, 0, player.image_jump_up.w, player.image_jump_up.h, 0, 'h',
+                                                       player.cx + 10, player.cy)
+        pass
+
+
+class RightJumpRunState:
+    def enter(player, event):
+        player.velocity += RUN_SPEED_PPS * 1.5
+        if event == JUMP and player.jump_count > 0:
+            player.jump_power = player.jump_power_max
+            player.gravity = 0
+            player.jump_count -= 1
+        elif event == JUMPING:
+            player.gravity = 0
+            player.jump_power = 0
+            player.jump_count -= 1
+        player.dir = clamp(-1, player.velocity, 1)
+        pass
+
+    def exit(player, event):
+        player.velocity -= RUN_SPEED_PPS * 1.5
+        if event == JUMP and player.climb is True:
+            player.power = -player.power_climb
+            player.jump_power = player.jump_power_max
+            player.gravity = player.gravity_max*0.5
+            player.climb = False
+        pass
+
+    def do(player):
+        player.jump_gravity()
+        player.x += player.velocity * game_framework.frame_time
+        player.y += player.jump_power * game_framework.frame_time
+        player.y -= player.gravity * game_framework.frame_time
+
+        player.block_collide_left()
+        player.block_collide_right()
+        player.landing_feet_head()
 
     def draw(player):
         if player.jump_power - player.gravity >= 0:
@@ -367,6 +445,7 @@ class ShotIdleState:
         if player.timer_shot >= player.timer_shot_max:  # 미사일 발사 시간 충전
             player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
+        player.jumping_check()
 
     def draw(player):
         if player.dir > 0:
@@ -400,14 +479,9 @@ class ShotLeftRunState:
             player.add_event(SHOT_END)  # 미사일 발사
 
         player.x += player.velocity * game_framework.frame_time  # 플레이어 x축 이동
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()):
-                break
-            if block == server.block[len(server.block) - 1]:
-                player.add_event(JUMPING)
-        for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
+        player.jumping_check()
+        player.block_collide_left()
+        player.block_collide_right()
         pass
 
     def draw(player):
@@ -442,15 +516,9 @@ class ShotRightRunState:
             player.add_event(SHOT_END)  # 미사일 발사
 
         player.x += player.velocity * game_framework.frame_time  # 플레이어 x축 이동
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()):
-                break
-            if block == server.block[len(server.block) - 1]:
-                player.add_event(JUMPING)
-
-        for block in server.block:
-            if collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
+        player.jumping_check()
+        player.block_collide_left()
+        player.block_collide_right()
         pass
 
     def draw(player):
@@ -489,28 +557,12 @@ class ShotJumpState:
             player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
-        if player.gravity < player.gravity_max:  # 최대까지 중력 증가
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity = player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
 
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-            elif collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.landing_feet_head()
         pass
 
     def draw(player):
@@ -551,33 +603,12 @@ class ShotLeftJumpState:
             player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
-        if player.gravity < player.gravity_max:  # 최대까지 중력 증가
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity = player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
-        for block in server.block:
-            if collision.collide(player.get_col_body_left(), block.get_col()):
-                player.x = 30 + block.col_right
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (
-                    player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.block_collide_left()
+        player.landing_feet_head()
         pass
 
     def draw(player):
@@ -618,33 +649,12 @@ class ShotRightJumpState:
             player.timer_shot = 0
             player.add_event(SHOT_END)  # 미사일 발사
 
-        if player.gravity < player.gravity_max:  # 최대까지 중력 증가
-            player.gravity += player.gravity_tic * game_framework.frame_time
-        elif player.gravity >= player.gravity_max:
-            player.gravity = player.gravity_max
-        if player.jump_power > 0:
-            player.jump_power -= player.jump_power_tic * game_framework.frame_time
-            if player.jump_power <= 0:
-                player.jump_power = 0
+        player.jump_gravity()
         player.x += player.velocity * game_framework.frame_time
         player.y -= player.gravity * game_framework.frame_time
         player.y += player.jump_power * game_framework.frame_time
-        for block in server.block:
-            if collision.collide(player.get_col_body_right(), block.get_col()):
-                player.x = -40 + block.col_left
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_feet(), block.get_col()) and (
-                    player.jump_power - player.gravity) <= 0:
-                player.y = 40 + block.col_top
-                player.add_event(LANDING)
-                break
-        for block in server.block:
-            if collision.collide(player.get_col_head(), block.get_col()) and (
-                    player.jump_power - player.gravity) > 0:
-                player.y = -40 + block.col_bottom
-                player.jump_power = 0
-                break
+        player.block_collide_right()
+        player.landing_feet_head()
         pass
 
     def draw(player):
@@ -659,57 +669,48 @@ class ShotRightJumpState:
 
 
 next_state_table = {
-    IdleState: {RIGHT_UP: IdleState, LEFT_UP: IdleState,
-                RIGHT_DOWN: RightRunState, LEFT_DOWN: LeftRunState,
-                JUMPING: JumpState, JUMP: JumpState, LANDING: IdleState,
-                SHOT: ShotIdleState},
-    LeftRunState: {RIGHT_UP: LeftRunState, LEFT_UP: IdleState,
-                   LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
-                   JUMPING: LeftJumpState, JUMP: LeftJumpState, LANDING: LeftRunState,
-                   SHOT: ShotLeftRunState},
-    RightRunState: {RIGHT_UP: IdleState, LEFT_UP: RightRunState,
-                    LEFT_DOWN: LeftRunState, RIGHT_DOWN: RightRunState,
-                    JUMPING: RightJumpState, JUMP: RightJumpState, LANDING: RightRunState,
-                    SHOT: ShotRightRunState},
+    IdleState: {RIGHT_DOWN: RightWalkState, LEFT_DOWN: LeftWalkState,
+                JUMPING: JumpState, JUMP: JumpState, SHOT: ShotIdleState},
+    LeftWalkState: {LEFT_UP: IdleState, RIGHT_DOWN: RightWalkState,
+                    JUMPING: LeftJumpState, JUMP: LeftJumpState,
+                    SHOT: ShotLeftRunState, RUN_DOWN: LeftRunState},
+    RightWalkState: {RIGHT_UP: IdleState, LEFT_DOWN: LeftWalkState,
+                     JUMPING: RightJumpState, JUMP: RightJumpState,
+                     SHOT: ShotRightRunState, RUN_DOWN: RightRunState},
+    LeftRunState: {LEFT_UP: IdleState, RIGHT_DOWN: RightRunState,
+                   JUMPING: LeftJumpRunState, JUMP: LeftJumpRunState, LANDING: LeftWalkState,
+                   SHOT: ShotLeftRunState, RUN_UP: LeftWalkState},
+    RightRunState: {RIGHT_UP: IdleState, LEFT_DOWN: LeftRunState,
+                    JUMPING: RightJumpRunState, JUMP: RightJumpRunState, LANDING: RightWalkState,
+                    SHOT: ShotRightRunState, RUN_UP: RightWalkState},
 
-    JumpState: {RIGHT_UP: JumpState, LEFT_UP: JumpState,
-                LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                LANDING: IdleState, JUMP: JumpState, JUMPING: JumpState,
-                SHOT: ShotJumpState},
-    LeftJumpState: {RIGHT_UP: LeftJumpState, LEFT_UP: JumpState,
-                    LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                    LANDING: LeftRunState, JUMP: LeftJumpState, JUMPING: LeftJumpState,
-                    SHOT: ShotLeftJumpState},
-    RightJumpState: {RIGHT_UP: JumpState, LEFT_UP: RightJumpState,
-                     LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
-                     LANDING: RightRunState, JUMP: RightJumpState, JUMPING: RightJumpState,
-                     SHOT: ShotRightJumpState},
+    JumpState: {LEFT_DOWN: LeftJumpState, RIGHT_DOWN: RightJumpState,
+                LANDING: IdleState, SHOT: ShotJumpState},
+    LeftJumpState: {LEFT_UP: JumpState, RIGHT_DOWN: RightJumpState,
+                    LANDING: LeftWalkState, SHOT: ShotLeftJumpState, RUN_DOWN: LeftJumpRunState},
+    RightJumpState: {RIGHT_UP: JumpState, LEFT_DOWN: LeftJumpState,
+                     LANDING: RightWalkState, SHOT: ShotRightJumpState, RUN_DOWN: RightJumpRunState},
+    LeftJumpRunState: {LEFT_UP: JumpState, RIGHT_DOWN: RightJumpRunState,
+                       LANDING: LeftRunState, SHOT: ShotLeftJumpState},
+    RightJumpRunState: {RIGHT_UP: JumpState, LEFT_DOWN: LeftJumpRunState,
+                        LANDING: RightRunState, SHOT: ShotRightJumpState},
 
-    ShotIdleState: {RIGHT_UP: ShotIdleState, LEFT_UP: ShotIdleState,
-                    LEFT_DOWN: ShotLeftRunState, RIGHT_DOWN: ShotRightRunState,
-                    JUMPING: ShotJumpState, JUMP: ShotJumpState, LANDING: ShotIdleState,
-                    SHOT: ShotIdleState, SHOT_END: IdleState},
-    ShotLeftRunState: {RIGHT_UP: ShotLeftRunState, LEFT_UP: ShotIdleState,
-                       LEFT_DOWN: ShotLeftRunState, RIGHT_DOWN: ShotRightRunState,
-                       JUMPING: ShotLeftJumpState, JUMP: ShotLeftJumpState, LANDING: ShotLeftRunState,
-                       SHOT: ShotIdleState, SHOT_END: LeftRunState},
-    ShotRightRunState: {RIGHT_UP: ShotIdleState, LEFT_UP: ShotRightRunState,
-                        LEFT_DOWN: ShotLeftRunState, RIGHT_DOWN: ShotRightRunState,
-                        JUMPING: ShotRightJumpState, JUMP: ShotRightJumpState, LANDING: ShotIdleState,
-                        SHOT: ShotRightRunState, SHOT_END: RightRunState},
+    ShotIdleState: {LEFT_DOWN: ShotLeftRunState, RIGHT_DOWN: ShotRightRunState,
+                    JUMPING: ShotJumpState, JUMP: ShotJumpState, SHOT_END: IdleState},
+    ShotLeftRunState: {LEFT_UP: ShotIdleState, RIGHT_DOWN: ShotRightRunState,
+                       JUMPING: ShotLeftJumpState, JUMP: ShotLeftJumpState,
+                       SHOT: ShotIdleState, SHOT_END: LeftWalkState},
+    ShotRightRunState: {RIGHT_UP: ShotIdleState, LEFT_DOWN: ShotLeftRunState,
+                        JUMPING: ShotRightJumpState, JUMP: ShotRightJumpState,
+                        LANDING: ShotIdleState, SHOT_END: RightWalkState},
 
-    ShotJumpState: {RIGHT_UP: ShotJumpState, LEFT_UP: ShotJumpState,
-                    LEFT_DOWN: ShotLeftJumpState, RIGHT_DOWN: ShotRightJumpState,
-                    JUMPING: ShotJumpState, JUMP: ShotJumpState, LANDING: ShotIdleState,
-                    SHOT: ShotJumpState, SHOT_END: JumpState},
-    ShotLeftJumpState: {RIGHT_UP: ShotLeftJumpState, LEFT_UP: ShotJumpState,
-                        LEFT_DOWN: ShotLeftJumpState, RIGHT_DOWN: ShotRightJumpState,
-                        JUMPING: ShotLeftJumpState, JUMP: ShotLeftJumpState, LANDING: ShotLeftRunState,
-                        SHOT: ShotLeftJumpState, SHOT_END: LeftJumpState},
-    ShotRightJumpState: {RIGHT_UP: ShotJumpState, LEFT_UP: ShotRightJumpState,
-                         LEFT_DOWN: ShotLeftJumpState, RIGHT_DOWN: ShotRightJumpState,
-                         JUMPING: ShotJumpState, JUMP: ShotJumpState, LANDING: ShotRightRunState,
-                         SHOT: ShotRightJumpState, SHOT_END: RightJumpState},
+    ShotJumpState: {LEFT_DOWN: ShotLeftJumpState, RIGHT_DOWN: ShotRightJumpState,
+                    LANDING: ShotIdleState, SHOT_END: JumpState},
+    ShotLeftJumpState: {LEFT_UP: ShotJumpState, RIGHT_DOWN: ShotRightJumpState,
+                        LANDING: ShotLeftRunState, SHOT_END: LeftJumpState},
+    ShotRightJumpState: {RIGHT_UP: ShotJumpState, LEFT_DOWN: ShotLeftJumpState,
+                         JUMPING: ShotJumpState, JUMP: ShotJumpState,
+                         LANDING: ShotRightRunState, SHOT_END: RightJumpState},
 
 }
 
@@ -730,11 +731,11 @@ class Player:
         self.velocity = 0  # 플레이어 속도 양수 오른쪽 음수 왼쪽
         self.distance = 0  # 플레이어 총 이동거리
         self.gravity = 0  # 플레이어 중력
-        self.gravity_tic = 500  # 프레임당 추가되는 중력
+        self.gravity_tic = 1000  # 프레임당 추가되는 중력
         self.gravity_max = 700  # 최대 중력
         self.jump_power = 0  # 점프 힘
-        self.jump_power_tic = 200  # 프레임당 줄어드는 점프힘
-        self.jump_power_max = 600  # 점프 힘 최대
+        self.jump_power_tic = 1000  # 프레임당 줄어드는 점프힘
+        self.jump_power_max = 1000  # 점프 힘 최대
         self.jump_count = 1  # 점프 카운트
         self.jump_count_max = 1  # 최대 가능 점프 횟수
         self.frame = 0
@@ -743,7 +744,9 @@ class Player:
         self.timer_shot_speed = 100
         self.frame_step = 0  # 대쉬 구름 시간 카운트
         self.frame_step_max = 100
-        self.frame_step_speed = 800
+        self.climb = False  # 벽타기 상태
+        self.power = 0  # 가해지는 힘
+        self.power_climb=800
         # ---------------------------------------------- 플레이어 상태
         self.event_que = []
         self.cur_state = IdleState
@@ -793,29 +796,53 @@ class Player:
         self.event_que.insert(0, event)
 
     def step(self, x, y):  # 대쉬 시에 달린 자리에 구름 만들기
-        smoke = Stepsmoke(x, y)
-        game_world.add_object(smoke, 1)
+        self.frame_step = self.frame_step + 1000 * game_framework.frame_time
+        if self.frame_step >= self.frame_step_max:
+            smoke = Stepsmoke(x, y)
+            game_world.add_object(smoke, 3)
+            self.frame_step -= self.frame_step_max
 
     def update(self):
         temp_x = server.player_area_x
         temp_y = server.player_area_y
+        if self.power != 0:
+            self.x += self.power * game_framework.frame_time
+            self.x -= self.velocity * game_framework.frame_time
+        if 40 >= self.power >= -40:
+            self.power = 0
+        elif self.power > 40:
+            self.power -= 6
+        elif self.power < -40:
+            self.power += 6
         self.cur_state.do(self)
         if len(self.event_que) > 0:
             event = self.event_que.pop()
             self.cur_state.exit(self, event)
-            self.cur_state = next_state_table[self.cur_state][event]
+            if event not in next_state_table[self.cur_state]:  # 다음 키값이 없으면 그대로
+                pass
+            else:
+                self.cur_state = next_state_table[self.cur_state][event]
             self.cur_state.enter(self, event)
         # ---------------------------- 플레이어 콜라이더 위치 변경
+
         self.x = clamp(30, self.x, 5000)  # 플레이어 위치 제한
         self.y = clamp(40, self.y, 5000)
         server.player_area_x = self.x // server.map_area_size_x
         server.player_area_y = self.y // server.map_area_size_y
         if temp_x != server.player_area_x:  # 플레이어가 있는 구역이 변화되면
-            for block in (server.block + server.block_sleep): # 블럭 상태 업데이트
+            for block in (server.block + server.block_sleep):  # 블럭 상태 업데이트
                 block.block_update()
+            for monster in (server.monster + server.monster_sleep):  # 몬스터 상태 업데이트
+                monster.monster_update()
+            for background in (server.background + server.background_sleep):  # 배경 물건 상태 업데이트
+                background.background_update()
         elif temp_y != server.player_area_y:
             for block in (server.block + server.block_sleep):  # 블럭 상태 업데이트
                 block.block_update()
+            for monster in (server.monster + server.monster_sleep):  # 몬스터 상태 업데이트
+                monster.monster_update()
+            for background in (server.background + server.background_sleep):  # 배경 물건 상태 업데이트
+                background.background_update()
 
         self.col_left = self.x - 30
         self.col_bottom = self.y - 40
@@ -853,3 +880,69 @@ class Player:
             key_event = key_event_table[(event.type, event.key)]
             self.add_event(key_event)
         pass
+
+    def jump_gravity(self):
+        if self.gravity < self.gravity_max:  # 최대까지 중력 증가
+            self.gravity += self.gravity_tic * game_framework.frame_time
+        elif self.gravity >= self.gravity_max:
+            self.gravity = self.gravity_max
+        if self.jump_power > 0:
+            self.jump_power -= self.jump_power_tic * game_framework.frame_time
+            if self.jump_power <= 0:
+                self.jump_power = 0
+
+    def landing_feet_head(self):
+        for block in server.block:
+            if collision.collide(self.get_col_feet(), block.get_col()) and (
+                    self.jump_power - self.gravity) <= 0:
+                self.y = 40 + block.col_top
+                self.add_event(LANDING)
+                break
+            elif collision.collide(self.get_col_head(), block.get_col()) and (
+                    self.jump_power - self.gravity) > 0:
+                self.y = -40 + block.col_bottom
+                self.jump_power = 0
+                break
+
+    def block_collide_left(self):
+        for block in server.block:
+            if collision.collide(self.get_col_body_left(), block.get_col()):
+                self.x = 30 + block.col_right
+                if self.cur_state is LeftJumpState or self.cur_state is LeftJumpRunState:  # 벽에 방향키 누르면서 붙어있으면
+                    if self.jump_power <= self.gravity:
+                        self.jump_power = 0
+                        self.gravity = self.gravity_max * 0.2
+                        self.climb = True
+                else:
+                    self.climb = False
+                break
+
+    def block_collide_right(self):
+        for block in server.block:
+            if collision.collide(self.get_col_body_right(), block.get_col()):
+                self.x = -40 + block.col_left
+                if self.cur_state is RightJumpState or self.cur_state is RightJumpRunState:  # 벽에 방향키 누르면서 붙어있으면
+                    if self.jump_power <= self.gravity:
+                        self.jump_power = 0
+                        self.gravity = self.gravity_max * 0.2
+                        self.climb = True
+                    else:
+                        self.climb = False
+                    break
+
+    def jumping_check(self):
+        for block in server.block:
+            if collision.collide(self.get_col_feet(), block.get_col()):
+                break
+            if block == server.block[len(server.block) - 1]:
+                self.add_event(JUMPING)
+
+    # 저장할 정보를 선택하는 함수
+    def __getstate__(self):
+        state = {'x': self.x, 'y': self.y}
+        return state
+
+    # 정보를 복구하는 함수
+    def __setstate__(self, state):
+        self.__init__()
+        self.__dict__.update(state)

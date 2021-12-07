@@ -23,10 +23,12 @@ def enter():
     sky = Sky()
     ui=UI()
     server.player = Player()
-    game_world.add_object(server.player, 3)
-    game_world.add_objects(server.block, 1)
-    game_world.add_objects(server.block_sleep, 1)
-    game_world.add_objects(server.monster, 2)
+    game_world.add_objects(server.background, 1)
+    game_world.add_objects(server.background_sleep, 1)
+    game_world.add_object(server.player, 4)
+    game_world.add_objects(server.block, 2)
+    game_world.add_objects(server.block_sleep, 2)
+    game_world.add_objects(server.monster, 3)
     for block in (server.block+server.block_sleep):
         block.block_update()
     pass
@@ -66,7 +68,7 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
-    ui.draw()
+    #ui.draw()
     for game_object in game_world.all_objects():
         if -500 < game_object.x + server.cx < 2500 and -500 < game_object.y + server.cy < 1500:
             game_object.draw()
