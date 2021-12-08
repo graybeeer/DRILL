@@ -4,6 +4,8 @@ import collision
 import game_framework
 import game_world
 import server
+import start_state
+from missile import Cushion
 from missile import Missile
 from stepsmoke import Stepsmoke
 
@@ -850,6 +852,8 @@ class Player:
         self.timer_shot = 0  # 미사일 발사 준비 시간
         self.timer_shot_max = 200
         self.timer_shot_speed = 100
+        self.shot_chance = 0  # 발사 남은 횟수
+        self.shot_chance_max = 3  # 발사 저장가능 최대 횟수
         self.frame_step = 0  # 대쉬 구름 시간 카운트
         self.frame_step_max = 100
         self.climb = False  # 벽타기 상태
@@ -874,7 +878,6 @@ class Player:
         # ---------------------------------------------- 음악
         self.jump_sound = load_wav('Mayreel/01_player_jump_01.wav')
         self.jump_sound.set_volume(100)
-        self.jump_sound.play(1)
 
     # ---------------------------------------------------------------- 플레이어 콜라이더
     def get_col(self):
@@ -920,10 +923,12 @@ class Player:
             self.frame_step -= timer
 
     def missile_charge(self):
-        missile = Missile()
-        game_world.add_object(missile, 4)
-        server.missile = 1
-        pass
+        if self.shot_chance > 0:
+            missile = Missile()
+            game_world.add_object(missile, 4)
+            server.missile = 1
+            self.shot_chance -= 1
+            self.shot_chance = clamp(0, self.shot_chance, self.shot_chance_max)
 
     def update(self):
         temp_x = server.player_area_x
@@ -948,8 +953,11 @@ class Player:
             self.cur_state.enter(self, event)
         # ---------------------------- 플레이어 콜라이더 위치 변경
 
-        self.x = clamp(30, self.x, server.map_area_size_x * server.map_area_x -40)  # 플레이어 위치 제한
-        self.y = clamp(40, self.y, server.map_area_size_y * server.map_area_y-40)
+        self.x = clamp(30, self.x, server.map_area_size_x * server.map_area_x - 40)  # 플레이어 위치 제한
+        self.y = clamp(-500, self.y, server.map_area_size_y * server.map_area_y - 40)
+        if self.y < -300:
+            self.x = server.player_start_x
+            self.y = server.player_start_y
         server.player_area_x = self.x // server.map_area_size_x
         server.player_area_y = self.y // server.map_area_size_y
         if temp_x != server.player_area_x:  # 플레이어가 있는 구역이 변화되면
@@ -987,7 +995,7 @@ class Player:
 
     def draw(self):
         self.cur_state.draw(self)
-        draw_rectangle(*self.get_col_c())
+        """draw_rectangle(*self.get_col_c())
         draw_rectangle(*self.get_col_feet_c())
         draw_rectangle(*self.get_col_head_c())
         draw_rectangle(*self.get_col_body_right_c())
@@ -995,7 +1003,7 @@ class Player:
 
         self.font.draw(self.cx - 60, self.cy + 50, '%s' % self.cur_state, (255, 255, 0))
         self.font.draw(self.cx - 60, self.cy + 70, '(%.2f %.2f)' % (self.x, self.y), (255, 255, 0))
-        self.font.draw(self.cx - 60, self.cy + 90, '(%d %d)' % (server.cx, server.cy), (255, 255, 0))
+        self.font.draw(self.cx - 60, self.cy + 90, '(%d %d)' % (server.cx, server.cy), (255, 255, 0))"""
         pass
 
     def handle_event(self, event):
@@ -1035,11 +1043,18 @@ class Player:
                     self.jump_power - self.gravity) > 0:
                 self.y = -40 + block.col_bottom
                 self.jump_power = 0
+                if block.code == 8:
+                    cushion = Cushion(block.x, block.y + 98)
+                    game_world.add_object(cushion, 3)
+                    block.code = 9
+
                 break
 
     def block_collide_left(self):
         for block in server.block:
             if collision.collide(self.get_col_body_left(), block.get_col()):
+                if block.code == 10 or block.code == 11: # 깃발에 부딪히면 끝
+                    game_framework.change_state(start_state)
                 self.x = 30 + block.col_right
                 if self.cur_state is LeftJumpState or self.cur_state is LeftJumpRunState:  # 벽에 방향키 누르면서 붙어있으면
                     if self.jump_power <= self.gravity:
@@ -1054,6 +1069,8 @@ class Player:
     def block_collide_right(self):
         for block in server.block:
             if collision.collide(self.get_col_body_right(), block.get_col()):
+                if block.code == 10 or block.code == 11: # 깃발에 부딪히면 끝
+                    game_framework.change_state(start_state)
                 self.x = -40 + block.col_left
                 if self.cur_state is RightJumpState or self.cur_state is RightJumpRunState:  # 벽에 방향키 누르면서 붙어있으면
                     if self.jump_power <= self.gravity:

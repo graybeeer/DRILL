@@ -16,7 +16,11 @@ class Block:
                           load_image('map/pipe_1.png'),
                           load_image('map/pipe_2.png'),
                           load_image('map/pipe_3.png'),
-                          load_image('map/Mayreel_Block_question_400.png')]
+                          load_image('map/Mayreel_Block_question_400.png'),
+                          load_image('map/Mayreel_Block_question_used_400.png'),
+                          load_image('map/Mayreel_Block_flag_1_400.png'),
+                          load_image('map/Mayreel_Block_flag_2_400.png'),
+                          load_image('map/Mayreel_Block_flag_3_400.png'),]
 
         self.font = load_font('ENCR10B.TTF', 16)
         self.x = x  # 블럭 좌표로 나타냄

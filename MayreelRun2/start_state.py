@@ -3,6 +3,7 @@ from pico2d import *
 import game_framework
 import main_state
 import map_state
+import game_world
 
 name = "StartState"
 start_menu = None
@@ -44,6 +45,7 @@ def enter():
 def exit():
     global start_menu
     del start_menu
+
 
 
 def pause():

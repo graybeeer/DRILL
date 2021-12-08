@@ -2,9 +2,9 @@ import random
 
 from pico2d import *
 
-import game_world
 import collision
 import game_framework
+import game_world
 import server
 from BehaviorTree import BehaviorTree, SelectorNode, SequenceNode, LeafNode
 
@@ -98,6 +98,9 @@ class Ddat:
         wander_chase_node.add_children(chase_node, wander_node)
         self.bt = BehaviorTree(wander_chase_node)
 
+    def get_col(self):
+        return self.x - 50, self.y - 80, self.x + 50, self.y + 64
+
     def get_col_feet(self):
         return self.x - 30, self.y - 80, self.x + 34, self.y - 60
 
@@ -115,6 +118,7 @@ class Ddat:
 
     def monster_update(self):
         self.state_editor = False
+
         if self.state_sleep == 'sleep':
             if abs(server.player_area_x - self.area_x) <= 1 and abs(server.player_area_y - self.area_y) <= 1:
                 self.state_sleep = 'awake'
@@ -132,16 +136,24 @@ class Ddat:
             self.bt.run()
             self.state_check()
             self.frame = (self.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % self.frame_max
-            self.jump_gravity()
-            self.x += self.velocity * game_framework.frame_time
-            self.y -= self.gravity * game_framework.frame_time
-            self.y += self.jump_power * game_framework.frame_time
+            if self.state_sleep == 'awake':  # 블럭이 시야 밖으로 나가 없을때 몹이 떨어짐
+                self.jump_gravity()
+                self.x += self.velocity * game_framework.frame_time
+                self.y -= self.gravity * game_framework.frame_time
+                self.y += self.jump_power * game_framework.frame_time
             self.landing_feet_head()
             self.block_collide_left()
             self.block_collide_right()
+            if collision.collide(self.get_col_head(), server.player.get_col_feet()):  # 플레이어가 발로 밟으면
+                game_world.remove_object(self)
+                server.player.gravity = 0  # 플레이어가 자동 점프됨
+                server.player.jump_power = server.player.jump_power_max
+            elif collision.collide(self.get_col(), server.player.get_col()):  # 몸에 부딪히면
+                server.player.x = server.player_start_x
+                server.player.y = server.player_start_y
             self.x = clamp(30, self.x, server.map_area_size_x * server.map_area_x - 34)  # 플레이어 위치 제한
             self.y = clamp(-500, self.y, server.map_area_size_y * server.map_area_y - 64)
-            if self.y<-300:
+            if self.y < -300:
                 game_world.remove_object(self)
         pass
 
@@ -214,7 +226,8 @@ class Ddat:
     # 저장할 정보를 선택하는 함수
     def __getstate__(self):
         state = {'x': self.x, 'y': self.y, 'col_left': self.col_left, 'col_bottom': self.col_bottom,
-                 'col_right': self.col_right, 'col_top': self.col_top, 'area_x': self.area_x, 'area_y': self.area_y}
+                 'col_right': self.col_right, 'col_top': self.col_top, 'area_x': self.area_x, 'area_y': self.area_y,
+                 'state_editor': self.state_editor}
         return state
 
     # 정보를 복구하는 함수

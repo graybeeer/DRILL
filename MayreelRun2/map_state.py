@@ -94,6 +94,18 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_9):
             code = 8
             code_class = 'block'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_0):
+            code = 9
+            code_class = 'block'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F5):
+            code = 10
+            code_class = 'block'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F6):
+            code = 11
+            code_class = 'block'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F7):
+            code = 12
+            code_class = 'block'
 
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F1):
             code = 0
@@ -236,9 +248,16 @@ def draw():
 
 def load_saved_world(i):
     game_world.load(i)
+    server.player_start_x = 0  # 플레이어 시작 좌표
+    server.player_start_y = 0
+    server.player_area_x = 0  # 플레이어가 있는 맵 블럭
+    server.player_area_y = 0
     server.block = []
+    server.block_sleep = []
     server.monster = []
+    server.monster_sleep = []
     server.background = []
+    server.background_sleep = []
     for o in game_world.all_objects():
         if isinstance(o, Block):
             server.block.append(o)

@@ -13,14 +13,13 @@ sky = None
 
 class UI:
     def __init__(self):
-        self.font = load_font('ENCR10B.TTF', 16)
+        self.font = load_font('a시월구일3.ttf', 40)
         self.bgm = load_wav('bgm_burywood_main.wav')
         self.bgm.set_volume(64)
         self.bgm.repeat_play()
 
     def draw(self):
-        self.font.draw(800, 600, '(%d,%d)' % (server.player.x, server.player.y), (0, 0, 0))
-        self.font.draw(800, 700, '(%d,%d)' % (server.player_start_x, server.player_start_y), (0, 0, 0))
+        self.font.draw(200, 100, '(%d/%d)' % (server.player.shot_chance, server.player.shot_chance_max), (0, 0, 0))
 
 
 def enter():
@@ -41,6 +40,7 @@ def enter():
     for monster in (server.monster + server.monster_sleep):
         monster.monster_update()
 
+
     pass
 
 
@@ -48,6 +48,7 @@ def exit():
     global ui
     ui = None
     game_world.clear()
+
 
 
 def pause():
@@ -76,7 +77,7 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
-    # ui.draw()
     for game_object in game_world.all_objects():
         game_object.draw()
+    ui.draw()
     update_canvas()
