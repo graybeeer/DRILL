@@ -20,17 +20,18 @@ class UI:
         self.bgm.repeat_play()
 
     def draw(self):
-        self.font.draw(800, 600, '(%d,%d)' % (server.player_area_x, server.player_area_y), (0, 0, 0))
-        self.font.draw(800, 700, '(%d,%d)' % (len(server.block), len(server.block_sleep)), (0, 0, 0))
+        self.font.draw(800, 600, '(%d,%d)' % (server.player.x, server.player.y), (0, 0, 0))
+        self.font.draw(800, 700, '(%d,%d)' % (server.player_start_x, server.player_start_y), (0, 0, 0))
 
 
 
 
 def enter():
     global sky,ui
+    server.start_point.start()
     sky = Sky()
     ui=UI()
-    ui.bgm.repeat_play()
+    ui.bgm.play()
     server.player = Player()
     game_world.add_objects(server.background, 1)
     game_world.add_objects(server.background_sleep, 1)
@@ -40,11 +41,13 @@ def enter():
     game_world.add_object(server.player, 4)
     for block in (server.block+server.block_sleep):
         block.block_update()
+
     pass
 
 
 def exit():
-    ui.bgm.play(-1)
+    global ui
+    ui=None
     game_world.clear()
 
 
@@ -63,12 +66,7 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.change_state(start_state)
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
-            game_framework.change_state(map_state)
-        if server.player is not None:
-            server.player.handle_event(event)
-        else:
-            pass
+        server.player.handle_event(event)
 
 
 def update():

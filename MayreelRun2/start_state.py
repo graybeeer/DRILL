@@ -25,7 +25,7 @@ class StartMenu:
         self.font.draw(1150, 530, '%s' % ("MAP EDITOR"), (0, 0, 0))
         self.font.draw(1150, 330, '%s' % ("???"), (0, 0, 0))
         self.font.draw(1150, 130, '%s' % ("GAME QUIT"), (0, 0, 0))
-        if game_ui==True:
+        if game_ui == True:
             self.image_ui.clip_draw(0, 0, 100, 100, 800, 450, 1000, 600)
             for i in range(5):
                 draw_rectangle(150 * i + 350, 400, 150 * i + 500, 550)
@@ -33,7 +33,6 @@ class StartMenu:
             for i in range(5):
                 draw_rectangle(150 * i + 350, 200, 150 * i + 500, 350)
                 self.font_ui.draw(150 * i + 375, 275, "월드" + "%d " % (i + 6), (0, 0, 0))
-
 
 
 def enter():
@@ -64,7 +63,14 @@ def handle_events():
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_ui = False
         if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):
-            if 1100 < event.x < 1600:
+            if game_ui == True:
+                for i in range(5):
+                    if 150 * i + 350 < event.x < 150 * i + 500:
+                        if 400 < get_canvas_height() - event.y < 550:
+                            game_ui=False
+                            map_state.load_saved_world(i)
+                            game_framework.change_state(main_state)
+            elif 1100 < event.x < 1600:
                 if 650 < get_canvas_height() - event.y < 800:
                     game_ui = True
                 elif 450 < get_canvas_height() - event.y < 600:
