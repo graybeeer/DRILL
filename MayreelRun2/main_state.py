@@ -2,15 +2,14 @@ from pico2d import *
 
 import game_framework
 import game_world
-import map_state
 import server
 import start_state
 from player import Player
 from sky import Sky
-from block import Block
 
 name = "MainState"
 sky = None
+
 
 class UI:
     def __init__(self):
@@ -24,13 +23,11 @@ class UI:
         self.font.draw(800, 700, '(%d,%d)' % (server.player_start_x, server.player_start_y), (0, 0, 0))
 
 
-
-
 def enter():
-    global sky,ui
+    global sky, ui
     server.start_point.start()
     sky = Sky()
-    ui=UI()
+    ui = UI()
     ui.bgm.play()
     server.player = Player()
     game_world.add_objects(server.background, 1)
@@ -39,15 +36,17 @@ def enter():
     game_world.add_objects(server.block_sleep, 2)
     game_world.add_objects(server.monster, 3)
     game_world.add_object(server.player, 4)
-    for block in (server.block+server.block_sleep):
+    for block in (server.block + server.block_sleep):
         block.block_update()
+    for monster in (server.monster + server.monster_sleep):
+        monster.monster_update()
 
     pass
 
 
 def exit():
     global ui
-    ui=None
+    ui = None
     game_world.clear()
 
 
@@ -77,7 +76,7 @@ def update():
 def draw():
     clear_canvas()
     sky.draw()
-    #ui.draw()
+    # ui.draw()
     for game_object in game_world.all_objects():
         game_object.draw()
     update_canvas()

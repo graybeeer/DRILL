@@ -67,13 +67,15 @@ def handle_events():
                 for i in range(5):
                     if 150 * i + 350 < event.x < 150 * i + 500:
                         if 400 < get_canvas_height() - event.y < 550:
-                            game_ui=False
+                            game_ui = False
                             map_state.load_saved_world(i)
                             game_framework.change_state(main_state)
+
             elif 1100 < event.x < 1600:
                 if 650 < get_canvas_height() - event.y < 800:
                     game_ui = True
                 elif 450 < get_canvas_height() - event.y < 600:
+                    map_state.load_saved_world(0)
                     game_framework.change_state(map_state)
                 elif 50 < get_canvas_height() - event.y < 200:
                     game_framework.quit()

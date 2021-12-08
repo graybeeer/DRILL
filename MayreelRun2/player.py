@@ -948,8 +948,8 @@ class Player:
             self.cur_state.enter(self, event)
         # ---------------------------- 플레이어 콜라이더 위치 변경
 
-        self.x = clamp(30, self.x, server.map_area_size_x * server.map_area_x)  # 플레이어 위치 제한
-        self.y = clamp(40, self.y, server.map_area_size_y * server.map_area_y)
+        self.x = clamp(30, self.x, server.map_area_size_x * server.map_area_x -40)  # 플레이어 위치 제한
+        self.y = clamp(40, self.y, server.map_area_size_y * server.map_area_y-40)
         server.player_area_x = self.x // server.map_area_size_x
         server.player_area_y = self.y // server.map_area_size_y
         if temp_x != server.player_area_x:  # 플레이어가 있는 구역이 변화되면

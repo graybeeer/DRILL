@@ -4,6 +4,7 @@ import game_framework
 import game_world
 import server
 import start_state
+import main_state
 from background import Background
 from block import Block
 from ddat import Ddat
@@ -64,8 +65,8 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.change_state(start_state)
-        """elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
-            game_framework.change_state(main_state)"""
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
+            game_framework.change_state(main_state)
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_1):
             code = 0
             code_class = 'block'
@@ -93,9 +94,7 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_9):
             code = 8
             code_class = 'block'
-        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_6):
-            code = 0
-            code_class = 'monster'
+
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F1):
             code = 0
             code_class = 'background'
@@ -109,7 +108,11 @@ def handle_events():
             code = 3
             code_class = 'background'
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_q):
+            code = 0
             code_class = 'startpoint'
+        elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_w):
+            code = 0
+            code_class = 'monster'
         """if (event.type, event.key) == (SDL_KEYDOWN, SDLK_w):
             load_saved_world()"""
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
@@ -153,8 +156,7 @@ def handle_events():
                         game_world.remove_object(server.monster[i])
                         del (server.monster[i])
                         break
-            game_world.remove_object(server.start_point)
-            server.start_point = None
+
             """for i in range(len(server.background)):  # 배경 블럭 삭제
                 if server.background[i].x - 50 < event.x - server.cx < server.background[i].x + 50:
                     if server.background[i].y <= get_canvas_height() - event.y - server.cy < server.background[
@@ -180,6 +182,8 @@ def handle_events():
                                100 * ((get_canvas_height() - event.y - server.cy) // 100), code)]
                 game_world.add_object(server.background[len(server.background) - 1], 1)
             elif code_class == 'startpoint':
+                game_world.remove_object(server.start_point)
+                server.start_point=None
                 server.start_point = Startpoint(100 * ((event.x - server.cx) // 100) + 50,
                                                 100 * ((get_canvas_height() - event.y - server.cy) // 100) + 64)
                 game_world.add_object(server.start_point, 2)

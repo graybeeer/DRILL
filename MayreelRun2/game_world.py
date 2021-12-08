@@ -47,7 +47,7 @@ def save(i):
 
 def load(i):
     global objects
-    with open('game' + '%d' % (i + 1) + '.sav', 'rb') as f:
+    with open('game' + '%d' % (i+1) + '.sav', 'rb') as f:
         objects = pickle.load(f)
 
 

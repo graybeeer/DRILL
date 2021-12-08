@@ -13,18 +13,12 @@ class Startpoint:
     def start(self):
         server.player_start_x = self.x
         server.player_start_y = self.y - 24
-        if self.state == 'awake':
-            self.state = 'sleep'
-        else:
-            self.state = 'awake'
-        pass
 
     def update(self):
         pass
 
     def draw(self):
-        if self.state == 'awake':
-            self.image.clip_draw(0, 0, self.image.w, self.image.h, self.x + server.cx, self.y + server.cy, 128, 128)
+        self.image.clip_draw(0, 0, self.image.w, self.image.h, self.x + server.cx, self.y + server.cy, 128, 128)
         pass
 
     # 저장할 정보를 선택하는 함수
