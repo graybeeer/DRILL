@@ -22,7 +22,8 @@ class Stepsmoke:
                           load_image('effect/step/StepSmoke_5.png'),
                           load_image('effect/step/StepSmoke_6.png'),
                           load_image('effect/step/StepSmoke_7.png'),
-                          load_image('effect/step/StepSmoke_8.png')]
+                          load_image('effect/step/StepSmoke_8.png'),
+                          load_image('effect/step/StepSmoke_9.png')]
         self.x = x
         self.y = y
         self.frame = 0
@@ -30,7 +31,7 @@ class Stepsmoke:
 
     def update(self):
         self.frame = (self.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time)
-        if int(self.frame) >= 9:
+        if int(self.frame) > 9:
             game_world.remove_object(self)
         pass
 

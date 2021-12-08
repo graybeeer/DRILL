@@ -3,6 +3,7 @@ from pico2d import *
 import game_framework
 import game_world
 import main_state
+import start_state
 import server
 from background import Background
 from block import Block
@@ -17,21 +18,29 @@ code_class = 'block'  # 코드 종류
 class UI:
     def __init__(self):
         self.font = load_font('a시월구일2.ttf', 20)
+        self.image_ui = load_image('ui/whiteboard.png')
 
     def draw(self):
+
         for i in range(server.map_area_x):
             for j in range(server.map_area_y):
                 self.font.draw(50 + 1000 * i + server.cx, 950 + 1000 * j + server.cy, '(%d,%d)' % (i, j), (0, 0, 0))
+        for i in range(5):
+            self.image_ui.clip_draw(0, 0, self.image_ui.w, self.image_ui.h, 300 * i + 150, 825, 250, 100)
+            draw_rectangle(300 * i + 25, 775, 300 * i + 150, 875)
+            draw_rectangle(300 * i + 150, 775, 300 * i + 275, 875)
+            self.font.draw(300 * i + 25, 825, "세이브 " + "%d " % (i + 1) + "저장", (0, 0, 0))
+            self.font.draw(300 * i + 150, 825, "세이브 " + "%d " % (i + 1) + "로드", (0, 0, 0))
 
 
 def enter():
-    server.ui = UI()
     server.cx = 0
     server.cy = 0
     server.player = None
     game_world.add_objects(server.background, 1)
     game_world.add_objects(server.block, 2)
     game_world.add_objects(server.monster, 3)
+    server.ui = UI()
     pass
 
 
@@ -54,7 +63,7 @@ def handle_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.quit()
+            game_framework.change_state(start_state)
         elif event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             game_framework.change_state(main_state)
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_1):
@@ -87,23 +96,37 @@ def handle_events():
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_F4):
             code = 3
             code_class = 'background'
-        if (event.type, event.key) == (SDL_KEYDOWN, SDLK_q):
+        """if (event.type, event.key) == (SDL_KEYDOWN, SDLK_q):
             game_world.save()
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_w):
-            load_saved_world()
+            load_saved_world()"""
         if (event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):  # 카메라 이동
-            server.cx += 100
-            server.cx = clamp(-server.map_area_size_x * server.map_area_x, server.cx, 0)  # 카메라 범위 제한
+            server.cx += 200
+            server.cx = clamp(-(server.map_area_size_x * server.map_area_x - get_canvas_width()), server.cx, 0)
+            # 카메라 범위 제한
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_RIGHT):
-            server.cx -= 100
-            server.cx = clamp(-server.map_area_size_x * server.map_area_x, server.cx, 0)
+            server.cx -= 200
+            server.cx = clamp(-(server.map_area_size_x * server.map_area_x - get_canvas_width()), server.cx, 0)
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_UP):  # 카메라 이동
-            server.cy -= 100
-            server.cy = clamp(-server.map_area_size_y * server.map_area_y, server.cy, 0)
+            server.cy -= 200
+            server.cy = clamp(-(server.map_area_size_y * server.map_area_y - get_canvas_height()), server.cy, 0)
         elif (event.type, event.key) == (SDL_KEYDOWN, SDLK_DOWN):
-            server.cy += 100
-            server.cy = clamp(-server.map_area_size_y * server.map_area_y, server.cy, 0)
-        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):  # 마우스 좌클릭 블럭 추가
+            server.cy += 200
+            server.cy = clamp(-(server.map_area_size_y * server.map_area_y - get_canvas_height()), server.cy, 0)
+        left_click = 0
+        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK):  # 마우스 좌클릭 세이브 로드
+            for i in range(5):
+                if 300 * i + 25 < event.x < 300 * i + 150:
+                    if 775 < get_canvas_height() - event.y < 875:
+                        game_world.save(i)
+                        left_click = 1
+                        break
+                elif 300 * i + 150 < event.x < 300 * i + 275:
+                    if 775 < get_canvas_height() - event.y < 875:
+                        load_saved_world(i)
+                        left_click = 1
+                        break
+        if (event.type, event.button) == (SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LMASK) and left_click == 0:  # 마우스 좌클릭 블럭 추가
             for i in range(len(server.block)):
                 if server.block[i].col_left < event.x - server.cx < server.block[i].col_right:
                     if server.block[i].col_bottom < get_canvas_height() - event.y - server.cy < server.block[
@@ -179,17 +202,18 @@ def draw():
     clear_canvas()
     for game_object in game_world.all_objects():
         game_object.draw()
-    for i in range(10):
-        for j in range(10):
+    for i in range(server.map_area_x):
+        for j in range(server.map_area_y):
             draw_rectangle(server.map_area_size_x * i + server.cx, server.map_area_size_y * i + server.cy,
                            server.map_area_size_x * (j + 1) + server.cx,
                            server.map_area_size_y * (j + 1) + server.cy)
-    # server.ui.draw()
+
+    server.ui.draw()
     update_canvas()
 
 
-def load_saved_world():
-    game_world.load()
+def load_saved_world(i):
+    game_world.load(i)
     server.block = []
     server.monster = []
     server.background = []

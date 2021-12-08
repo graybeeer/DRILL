@@ -5,6 +5,7 @@ from pico2d import *
 import collision
 import game_framework
 import server
+from BehaviorTree import BehaviorTree, SelectorNode, SequenceNode, LeafNode
 
 WAKE, SLEEP, JUMPING, LANDING = range(4)
 next_state_table = {}

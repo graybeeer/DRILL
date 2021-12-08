@@ -1,5 +1,5 @@
 import pickle
-import server
+
 # layer 0: Background Objects
 # layer 1: Foreground Objects
 objects = [[], [], [], [], []]
@@ -37,12 +37,15 @@ def all_objects():
     for i in range(len(objects)):
         for o in objects[i]:
             yield o
-def save():
-    with open('game.sav', 'wb') as f:
+
+
+def save(i):
+    with open('game' + '%d' % (i + 1) + '.sav', 'wb') as f:
         pickle.dump(objects, f)
     print('saved')
 
-def load():
+
+def load(i):
     global objects
-    with open('game.sav', 'rb') as f:
+    with open('game' + '%d' % (i + 1) + '.sav', 'rb') as f:
         objects = pickle.load(f)
